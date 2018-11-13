@@ -1,0 +1,15 @@
+[Unit]
+Description=csymapp-api
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/root/csymapp-api
+ExecStart=/root/csymapp-api/start.sh
+SyslogIdentifier=csymapp-api
+Restart=on-failure
+RestartSec=5
+
+
+[Install]
+WantedBy=multi-user.target
