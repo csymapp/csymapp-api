@@ -119,7 +119,6 @@ class auth extends csystem {
 		let __promisifiedPassportAuthentication = function () {
 		    return new Promise((resolve, reject) => {
 		        passport.authenticate('jwt', {session: false}, (err, user, info) => {
-		        	// console.log(info)
 		        	if(info) {
 		        		info.status = 422
 		        		return reject(info)

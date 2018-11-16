@@ -86,6 +86,30 @@ class Csystem
 		})
 	}
 
+	async protected(req, res, next)
+	{
+		let self = this
+		// self.isMethodAllowed(req, ["GET"]);
+		let __promisifiedPassportAuthentication = function () {
+		    return new Promise((resolve, reject) => {
+		        passport.authenticate('jwt', {session: false}, (err, user, info) => {
+		        	if(info) {
+		        		info.status = 422
+		        		return reject(info)
+		        	}
+		        	if(err)return reject(err)
+		        	if(user === false)return reject({"message": "No information given", status:422});
+		        	res.json(user)
+		        })(req, res, next) 
+		    })
+		}
+
+		return __promisifiedPassportAuthentication().catch((err)=>{
+			// return Promise.reject(err)
+			throw(err)
+		})
+	}
+
 
 	async getRoutes(path){
 		return new Promise((resolve, reject)=>{
@@ -103,6 +127,10 @@ class Csystem
 				}
 				resolve(ret)
 			})
+	}
+
+	async main() {
+		
 	}
 
 	// async _try(func, wait = true)

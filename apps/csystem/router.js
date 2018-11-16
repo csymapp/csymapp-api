@@ -27,8 +27,6 @@ class router
 		let app;
 		let [err, care, dontcare] = [];
 
-		console.log('loading page...')
-
 		try 
 		{
 			app = (new (require(__dirname+'/../'+appname)))// /api/users/uid;
@@ -49,6 +47,7 @@ class router
 					console.log(err.message)
 					if(err.message !== "require(...) is not a constructor") { //the app does not exist /{app}/method/etc
 						error.message = "Not found"
+						console.log(error)
 						self.errorHandler(req, res, error, next)
 						return;
 					}
@@ -66,15 +65,15 @@ class router
 			}
 		}
 
-		;[err, dontcare] = await to(app.setup(req,res))
+		;[err, dontcare] = await to(app.setup(req,res, next))
 		try {
-			;[err, dontcare] = await to( app[func](req, res))
+			;[err, dontcare] = await to( app[func](req, res, next))
 			if(err)throw (err)			//if func is a param instead of a function, or func does not exist
 		}catch(error) {
 			console.log(error)
 			if(error.name === "TypeError" )
 				try {
-					;[err, dontcare] = await to( app["main"](req, res))
+					;[err, dontcare] = await to( app["main"](req, res, next))
 					if(err) throw(err)
 				} catch(err) {
 					self.errorHandler(req, res, err, next)
@@ -90,8 +89,11 @@ class router
  	{
  		// console.log(error)
  		error = error.code !== undefined || error.message !== undefined?error:error+''
- 		error.code === "MODULE_NOT_FOUND"?csErroHandler.error404(req, res):csErroHandler.error500(req, res, error, next)
-		next();
+		 error.code === "MODULE_NOT_FOUND"?csErroHandler.error404(req, res):csErroHandler.error500(req, res, error, next)
+		 console.log(error)
+		try{
+			next();
+		}catch(error){}
  	}
 
  	defaultMethod(method)

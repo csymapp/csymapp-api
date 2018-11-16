@@ -68,6 +68,8 @@ Start Date  | 2017
 We have created an installation script. Be sure to follow carefully any instuctions given. Especially be sure to edit the files `.env` and `config`
 Before running the install script, please ensure you have the [prerequisites](#Prerequisites) installed.
 
+Be sure also to set environment to production `ENV=production` in `.env`. Otherwise anyone will be able to access your admin account because of the common email and password used for development enviroment set-ups.
+
 ```sh
 cd /root
 git clone https://github.com/csymapp/csymapp-api.git
@@ -75,6 +77,8 @@ cd csymapp-api/setup
 ./first_time_setup.sh
 nvm use 8
 ```
+
+**What does this do?** - It creates the databases and relations required, creates the service and creates two test users: an common account for guest users and an administrator account.
 
 **[⬆ back home](#table-of-contents)**
 

@@ -231,7 +231,7 @@ class Profile extends abstractProfile
 			let model = key.slice(0, -1)
 			uid = profiles[key].UserUid
 			;[err, care] = await to(self.sequelize.models[model].update(profiles[key], {where: {UserUid:profiles[key].UserUid, Email:profiles[key].Oldemail}}))
-			console.log(care)
+			// console.log(care)
 		}
 
 		// ;[err, care] = await to(self.sequelize.models.Person.findOne({where: {uid:uid}} ))
@@ -270,7 +270,7 @@ class Profile extends abstractProfile
 			let model = key.slice(0, -1)
 			uid = profiles[key].UserUid
 			;[err, care] = await to(self.sequelize.models[model].destroy({where: {UserUid:profiles[key].UserUid, Email:profiles[key].Oldemail}}))
-			console.log(care)
+			// console.log(care)
 		}
 
 		if(err) {
@@ -294,7 +294,7 @@ class abstractPerson extends abstractWorld
 	expandPerson(person){
 		let thisPerson = {...person}
 		for(const inner in person){
-			console.log(inner)
+			// console.log(inner)
 			let parts = inner.split(' ')
 			if(parts.length > 1){
 				thisPerson[parts[0]] === undefined? thisPerson[parts[0]] = {}:thisPerson[parts[0]][parts[1].charAt(0).toUpperCase() + parts[1].slice(1)] = person[inner];
@@ -430,6 +430,7 @@ class Person extends abstractPerson
 				break;
 			case "whichwithPwd":
 				self.attributes.push('Password')
+				// console.log(options)
 				;[err, care] = await to(self.sequelize.models.Person.findOne({where: options, attributes:self.attributes} ))
 				break;
 			case "update":
@@ -493,7 +494,7 @@ class Person extends abstractPerson
 		// try{
 		let thisPerson = {...person}
 		for(const inner in person){
-			console.log(inner)
+			// console.log(inner)
 			let parts = inner.split(' ')
 			if(parts.length > 1){
 				let toupper = parts[1].charAt(0).toUpperCase() + parts[1].slice(1)
@@ -507,9 +508,14 @@ class Person extends abstractPerson
 		}
 		
 		;[err, care] = await to(self.sequelize.models.Person.create(thisPerson,{
-			include: [{
-		        model: self.sequelize.models.Emailprofile
-		    }]
+			include: [
+				{
+					model: self.sequelize.models.Emailprofile
+				},
+				{
+					model: self.sequelize.models.Github
+				}
+		]
 		}))
 
 		if(err) {
@@ -569,10 +575,6 @@ class Person extends abstractPerson
 				break;
 		}
 
-		console.log("DONW WITH INTTE")
-		console.log(care)
-		console.log(err)
-
 		return JSON.parse(JSON.stringify(care));
 	}
 
@@ -616,7 +618,7 @@ class Person extends abstractPerson
 	{
 		let password = options.Password,
 			user = options.user;
-		console.log(options)
+		// console.log(options)
 		Async.auto({
             start: function (dones) {
                 let syspass = JSON.parse(JSON.stringify(user)).Password;
@@ -695,7 +697,6 @@ class Family extends abstractFamily
 	async getApps(family) {
 		let self = this
 		let [err, care] = [];
-		console.log('-===========================================')
 		;[err, care] = await to(self.sequelize.models.InstalledApp.findAll(
 			{
 				where:{
@@ -727,7 +728,6 @@ class Family extends abstractFamily
 	async getspecificMemberRoleforFamily(family, specificRole) {
 		let self = this
 		let [err, care] = [];
-		console.log('-===========================================')
 		;[err, care] = await to(self.sequelize.models.InstalledApp.findAll(
 			{
 				where:{
@@ -1045,6 +1045,145 @@ class World extends abstractWorld
 	}
 }
 
+class EmailProfile 
+{
+	constructor(sequelize)
+	{
+		// super();
+		let self = this;
+		self.sequelize = sequelize;
+		// self.People = self.Person = new Person(sequelize);
+		// self.Families = self.Family = new family;
+		// self.FamilyMembers = self.familyMembers = new familyMembers;
+	}
+	
+	async whichEmailProfile(profile) {
+		
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Emailprofile.findOne({where:profile}))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care
+	}
+
+	async whichPersonwithEmailProfile(profile) {
+		
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Person.findOne(
+			{
+				
+				include: [
+					{
+						model:self.sequelize.models.Emailprofile,
+						where:profile
+					}
+				]
+			}
+		))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care
+	}
+
+	async whichPerson(uid, moreAttributes) {
+		let self = this
+		let attributes = {
+			person: ['uid','Name', 'Gender', 'IsActive']
+		}
+		let [err, care] = await to(self.sequelize.models.Person.findOne({
+			where:{uid},
+			attributes:attributes.person,
+			include: 
+				[
+					{model:self.sequelize.models.Github},
+					{model:self.sequelize.models.Google},
+					{model:self.sequelize.models.Facebook},
+					{
+						model:self.sequelize.models.Emailprofile,
+						attributes: ['Email', 'IsActive']
+					}
+				]
+			}
+		))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	async addProfile(profile) {
+		let self = this;
+		let [err, care] = []
+		;[err, care] = await to(self.sequelize.models.Emailprofile.create(profile))
+
+		if(err) {
+			let {a} = err.message || err.msg
+			return Promise.reject({msg:err.msg||err.errors[0].message||err.message||err, code:err.code||422, status:422})
+		}
+		return care;
+	}
+}
+
+
+class GitProfile 
+{
+	constructor(sequelize)
+	{
+		// super();
+		let self = this;
+		self.sequelize = sequelize;
+		// self.People = self.Person = new Person(sequelize);
+		// self.Families = self.Family = new family;
+		// self.FamilyMembers = self.familyMembers = new familyMembers;
+	}
+	
+	async whichGitProfile(profile) {
+		
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Github.findOne({where:profile}))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care
+	}
+
+	async whichPerson(uid, moreAttributes) {
+		let self = this
+		let attributes = {
+			person: ['uid','Name', 'Gender', 'IsActive']
+		}
+		let [err, care] = await to(self.sequelize.models.Person.findOne({
+			where:{uid},
+			attributes:attributes.person,
+			include: 
+				[
+					{model:self.sequelize.models.Github},
+					{model:self.sequelize.models.Google},
+					{model:self.sequelize.models.Facebook},
+					{
+						model:self.sequelize.models.Emailprofile,
+						attributes: ['Email', 'IsActive']
+					}
+				]
+			}
+		))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	async addProfile(profile) {
+		let self = this;
+		let [err, care] = []
+		;[err, care] = await to(self.sequelize.models.Github.create(profile))
+
+		if(err) {
+			console.log(err)
+			let {a} = err.message || err.msg
+			return Promise.reject({msg:err.msg||err.errors[0].message||err.message||err, code:err.code||422, status:422})
+		}
+		return care;
+	}
+}
+
 
 const appsConfig = require ('./apps.js')
 
@@ -1056,6 +1195,8 @@ module.exports = (sequelize) => {
 	module.Family =  new Family(sequelize)
 	module.Profile =  new Profile(sequelize)
 	module.apps = new appsConfig(sequelize);
+	module.EmailProfile = new EmailProfile(sequelize);
+	module.GitProfile = new GitProfile(sequelize);
 		// World: new World(sequelize),
 		// Person: new Person(sequelize),
 		// Family: new Family(sequelize)
