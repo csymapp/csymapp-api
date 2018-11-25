@@ -89,5 +89,12 @@ Please see the [docs](docs/TOC.md) on how to create applications using csymapp.
 
 ## Todo
 - [x] first time setup
-
+- Login
+    - [x] local (email)
+    - [x] facebook
+    - [x] github
+    - [ ] google
+    - [ ] twitter
+- Redirect after login
+    - [x] Github
 **[⬆ back home](#table-of-contents)**

@@ -21,6 +21,7 @@ class csymapp extends csystem {
     }
     
     async user(req, res, nex) {
+        console.log(req.headers)
         let [err, care] = [];
         ;[err, care] = await to(User.main(req, res));
         if(err) throw (err)

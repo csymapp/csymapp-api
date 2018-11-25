@@ -1184,6 +1184,66 @@ class GitProfile
 	}
 }
 
+class FbProfile 
+{
+	constructor(sequelize)
+	{
+		// super();
+		let self = this;
+		self.sequelize = sequelize;
+		// self.People = self.Person = new Person(sequelize);
+		// self.Families = self.Family = new family;
+		// self.FamilyMembers = self.familyMembers = new familyMembers;
+	}
+	
+	async whichFbProfile(profile) {
+		
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Facebook.findOne({where:profile}))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care
+	}
+
+	async whichPerson(uid, moreAttributes) {
+		let self = this
+		let attributes = {
+			person: ['uid','Name', 'Gender', 'IsActive']
+		}
+		let [err, care] = await to(self.sequelize.models.Person.findOne({
+			where:{uid},
+			attributes:attributes.person,
+			include: 
+				[
+					{model:self.sequelize.models.Github},
+					{model:self.sequelize.models.Google},
+					{model:self.sequelize.models.Facebook},
+					{
+						model:self.sequelize.models.Emailprofile,
+						attributes: ['Email', 'IsActive']
+					}
+				]
+			}
+		))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	async addProfile(profile) {
+		let self = this;
+		let [err, care] = []
+		;[err, care] = await to(self.sequelize.models.Facebook.create(profile))
+
+		if(err) {
+			console.log(err)
+			let {a} = err.message || err.msg
+			return Promise.reject({msg:err.msg||err.errors[0].message||err.message||err, code:err.code||422, status:422})
+		}
+		return care;
+	}
+}
+
 
 const appsConfig = require ('./apps.js')
 
@@ -1197,6 +1257,7 @@ module.exports = (sequelize) => {
 	module.apps = new appsConfig(sequelize);
 	module.EmailProfile = new EmailProfile(sequelize);
 	module.GitProfile = new GitProfile(sequelize);
+	module.FbProfile = new FbProfile(sequelize);
 		// World: new World(sequelize),
 		// Person: new Person(sequelize),
 		// Family: new Family(sequelize)
