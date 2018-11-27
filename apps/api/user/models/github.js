@@ -9,7 +9,8 @@ module.exports = (sequelize, DataTypes) => {
 		},
 		token: DataTypes.STRING,
 		Name: DataTypes.STRING,
-		Email: DataTypes.STRING
+		Email: DataTypes.STRING,
+		ProfilePic: DataTypes.STRING
 	},
 	{
 		hooks: {
@@ -41,6 +42,15 @@ module.exports = (sequelize, DataTypes) => {
 	// 	}
 	//     });
 	// }
+
+	Github.associate = function (models) {
+	    Github.hasMany(models.LoginAttempt, {
+	    	onDelete: "CASCADE",
+	      foreignKey: {
+	        allowNull: true
+			}
+	    });
+	}
 	
 
 	 return Github;

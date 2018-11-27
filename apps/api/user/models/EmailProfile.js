@@ -77,7 +77,8 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.BOOLEAN, 
 			allowNull: false, 
 			defaultValue: false
-		}
+		},
+		ProfilePic: DataTypes.STRING
 	},
 	{
 		hooks: {
@@ -92,15 +93,14 @@ module.exports = (sequelize, DataTypes) => {
 		return bcrypt.compareAsync(password, this.Password)
 	}
 
-	// Emailprofile.associate = function (models) {
-	//     Emailprofile.belongsTo(models.User, {
-	//     	onDelete: "CASCADE",
-	//       foreignKey: {
-	//         allowNull: false
-	// 		}
-	//     });
-
-	// }
+	Emailprofile.associate = function (models) {
+	    Emailprofile.hasMany(models.LoginAttempt, {
+	    	onDelete: "CASCADE",
+	      foreignKey: {
+	        allowNull: true
+			}
+	    });
+	}
 	
 
 	 return Emailprofile;

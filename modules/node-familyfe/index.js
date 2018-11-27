@@ -1142,7 +1142,7 @@ class GitProfile
 		let [err, care] = await to(self.sequelize.models.Github.findOne({where:profile}))
 		if(err) throw (err)
 		if(care === null) return {}
-		return care
+		return care.dataValues
 	}
 
 	async whichPerson(uid, moreAttributes) {

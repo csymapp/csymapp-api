@@ -17,6 +17,7 @@ const ExtractJwt = require('passport-jwt').ExtractJwt;
 const expressValidator = require('express-validator');
 const expressStatusMonitor = require('express-status-monitor');
 const cors = require('cors');
+const expressip = require('express-ip');
 // const jwt    = require('jsonwebtoken'); // used to create, sign, and verify tokens
 
 // =================================================================
@@ -48,6 +49,8 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 //cross-origin, not needed now
 app.use(cors())
+
+app.use(expressip().getIpInfoMiddleware);
 
 
 

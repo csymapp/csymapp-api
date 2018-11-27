@@ -105,6 +105,14 @@ module.exports = (sequelize, DataTypes) => {
 			foreignKey: {
 				allowNull: false
 			}
+		});
+		
+		Person.hasMany(models.LoginAttempt, {
+	    	onDelete: "CASCADE",
+	    	onUpdate: "CASCADE",
+			foreignKey: {
+				allowNull: true
+			}
 	    });
 
 	}

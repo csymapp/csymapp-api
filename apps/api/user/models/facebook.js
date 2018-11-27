@@ -9,7 +9,8 @@ module.exports = (sequelize, DataTypes) => {
 		},
 		token: DataTypes.STRING,
 		Name: DataTypes.STRING,
-		Email: DataTypes.STRING
+		Email: DataTypes.STRING,
+		ProfilePic: DataTypes.STRING
 	},
 	{
 		hooks: {
@@ -21,15 +22,14 @@ module.exports = (sequelize, DataTypes) => {
 	})
 
 
-	// Facebook.associate = function (models) {
-	//     Facebook.belongsTo(models.User, {
-	//     	onDelete: "CASCADE",
-	//       foreignKey: {
-	//         allowNull: false
-	// 		}
-	//     });
-
-	// }
+	Facebook.associate = function (models) {
+	    Facebook.hasMany(models.LoginAttempt, {
+	    	onDelete: "CASCADE",
+	      foreignKey: {
+	        allowNull: true
+			}
+	    });
+	}
 
 	 return Facebook;
 }

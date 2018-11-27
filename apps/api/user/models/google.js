@@ -9,7 +9,8 @@ module.exports = (sequelize, DataTypes) => {
 		},
 		token: DataTypes.STRING,
 		Name: DataTypes.STRING,
-		Email: DataTypes.STRING
+		Email: DataTypes.STRING,
+		ProfilePic: DataTypes.STRING
 	},
 	{
 		hooks: {
@@ -19,6 +20,15 @@ module.exports = (sequelize, DataTypes) => {
 		}
 
 	})
+
+	Google.associate = function (models) {
+	    Google.hasMany(models.LoginAttempt, {
+	    	onDelete: "CASCADE",
+	      foreignKey: {
+	        allowNull: true
+			}
+	    });
+	}
 
 
 	// Google.associate = function (models) {
