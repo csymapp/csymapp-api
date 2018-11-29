@@ -20,19 +20,26 @@ class Profile extends csystem{
 		;[err, care] = await to(self.isAuthenticated(res, req))
 		if(err) throw err;
 		let authuid = care.uid
+		console.log(req.body)
 		;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailid(emailid))
 		if(care === null) throw ({ status:422, message:"can't set for another user"})
 		let uidtoMod = care.uid;
-		
+		console.log(`${authuid} vs ${uidtoMod}`)
 		if(authuid !== uidtoMod)throw ({ status:422, message:"can't set for another user"})
 
+		
+		//surgbc15@gmail.com1
 		if (authuid !== uidtoMod) {
+			console.log('failing here')
+			console.log(typeof authuid)
+			console.log(typeof uidtoMod)
 			throw ({ status:422, message:"can't set for another user"})
 		}
 
+		
 		let data = JSON.parse(JSON.stringify(req.body))
 		;[err, care] = await to (Familyfe.EmailProfile.update(data, {emailuid:emailid}))
-
+		if(err) throw (err)
 		;[err, care] = await to (Familyfe.EmailProfile.whichPerson(uidtoMod))
 		if(err) throw (err)
 		res.json(care)

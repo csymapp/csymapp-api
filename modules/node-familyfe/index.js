@@ -1113,7 +1113,7 @@ class EmailProfile
 
 	async update(data, where) {
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Emailprofile.update(data, {where: where}))
+		let [err, care] = await to(self.sequelize.models.Emailprofile.update(data, {where: where, individualHooks: true}))
 		if(err) throw (err)
 		if(care === null) return {}
 		return care.dataValues
