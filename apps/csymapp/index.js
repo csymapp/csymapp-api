@@ -6,6 +6,8 @@ csystem = require(__dirname+"/../csystem").csystem,
 ,Familyfe = require(__dirname+'/../../modules/node-familyfe')(sequelize)
 ,User = require(__dirname+"/user")
 ,Auth = require(__dirname+"/auth")
+,Profile = require(__dirname+"/profile")
+,EmailProfile = require(__dirname+"/profiles/email")
 
 class csymapp extends csystem {
 
@@ -21,15 +23,30 @@ class csymapp extends csystem {
     }
     
     async user(req, res, nex) {
-        console.log(req.headers)
+        // console.log(req.headers)
         let [err, care] = [];
         ;[err, care] = await to(User.main(req, res));
+        // if(typeof err === 'object')
+        //     if(err) throw (''+err+'')
+        // else throw (err)
         if(err) throw (err)
     }
 
     async auth(req, res, next) {
         let [err, care] = [];
         ;[err, care] = await to(Auth.main(req, res, next));
+        if(err) throw (err)
+    }
+
+    async profile(req, res, next) {
+        let [err, care] = [];
+        ;[err, care] = await to(Profile.main(req, res, next));
+        if(err) throw (err)
+    }
+
+    async emailprofile(req, res, next) {
+        let [err, care] = [];
+        ;[err, care] = await to(EmailProfile.main(req, res, next));
         if(err) throw (err)
     }
 

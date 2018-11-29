@@ -23,6 +23,7 @@ class User extends csystem{
 		;[err, care] = await to(self.isAuthenticated(res, req))
 		
 		if(err)  {
+			console.log('err')
 			if(err.message === 'jwt expired' || err.message === 'invalid token') throw err
 			;[err, care] = await to (Familyfe.Person.beget({
 				Name: body.Name || "Anonymous User", 
@@ -38,7 +39,7 @@ class User extends csystem{
 			}))
 			if(err) throw err
 			let useruid = care.uid;
-			console.log('creating Roles in World for new usert');
+			console.log('creating Roles in World for new user');
 			;[err, care] = await to(Familyfe.Family.getMember(1, useruid))
 			if(err) throw (err)
 			let memberId = care
@@ -102,7 +103,38 @@ class User extends csystem{
 
 		}
 		
-    }
+	}
+	
+	
+    async getUser(req, res) {
+		let self = this;
+		let uid = req.params.v1
+		let [err, care] = []
+
+		let isLogged ;
+		let body = req.body
+
+		;[err, care] = await to(self.isAuthenticated(res, req))
+		
+		if(err)
+			 throw err
+		let myuid = care.uid 
+		let checkUser = req.params.v1
+		if (checkUser !== myuid) {
+			throw ({ status:422, message:"can't check for another user"})
+		}
+
+		if(checkUser) {
+			// this user has to be yourself,,, unless of course you are an admin in csystem family...
+			// 
+			;[err, care] = await to (Familyfe.EmailProfile.whichPerson(checkUser))
+			if(err) throw (err)
+			res.json(care)
+		}
+		
+	}
+	
+
 
     async main(req, res){
 		// res.send("type")
@@ -117,7 +149,8 @@ class User extends csystem{
 				res.json(care)	
 				break;
 			case 'GET':
-				;[err, care] = await to(self.getGatewayTypes(req, res));
+				;[err, care] = await to(self.getUser(req, res));
+				if(err) throw(err)
 				break;
 			case 'PATCH':
 				;[err, care] = await to(self.patchGatewayTypes(req, res));

@@ -25,8 +25,9 @@ class Auth extends csystem{
 		let ip = (req.headers['x-forwarded-for'] ||
 			req.connection.remoteAddress ||
 			req.socket.remoteAddress ||
-			req.connection.socket.remoteAddress).split(",")[0]
+			req.connection.socket.remoteAddress)
 
+		ip = ip.split(",")[0]
 		ip = ip.split(':').slice(-1)[0];
 		return ip;
 	}
@@ -93,7 +94,7 @@ class Auth extends csystem{
 		let self = this
 		let [err, care, dontcare] = []
 		req.headers['content-type'] = 'application/json'
-		console.log(req.headers)
+		// console.log(req.headers)
 		if(!req.headers.Authorization && !req.headers.authorization)
 			if(req.query.token)
 				req.headers['authorization'] = `bearer ${req.query.token}`
@@ -105,8 +106,14 @@ class Auth extends csystem{
 		;[err, care] = await to(self.isAuthenticated(res, req))
 		if(err) throw (err)
 		
-		res.json(care)
+		let person = JSON.parse(JSON.stringify(care))
+		let token = passport.generateToken({id:person.uid});
+		person.token = token
+		// console.log(person)
+		res.json(person)
 	}
+
+	
 	async github(req, res, next) {
 		let self = this
 		let err, care, dontcare
@@ -117,10 +124,14 @@ class Auth extends csystem{
 		let returned = req.params.v2
 
 		req.headers['content-type'] = 'application/json'
-		req.headers['authorization'] = `bearer ${token}`
+		req.headers['authorization'] = req.headers.authorization || `bearer ${token}`
 		;[err, care] = await to(self.isAuthenticated(res, req))
+		let loggedInPerson;
+		if(care) loggedInPerson = care.uid
 		// console.log(req.headers)
 		let personuid;
+		let ip = self.getIp(req)
+		req.query.ip=ip;
 
 		let __promisifiedPassportAuthentication = async function () {
 		    return new Promise((resolve, reject) => {
@@ -131,17 +142,41 @@ class Auth extends csystem{
 						// let err = err1
 						if(err) {
 							if(err.message === 'jwt expired' || err.message === 'invalid token') throw err 
+							// if there is a person that is logged in, then add to his person this profile
+							// if(loggedInPerson) {
+							// 	let profile = {
+							// 		Email:user.emails[0].value.toLowerCase(), 
+							// 		gituid:user.id,
+							// 		IsActive:true,
+							// 		PersonUid:care.uid,
+							// 		ProfilePic: user.photos[0].value
+							// 	}
+							// 	personuid = care.uid;
+							// 	;[err, care] = await to (Familyfe.GitProfile.addProfile(profile))
+							// 	if(err) 
+							// 		if (err.msg !== 'PRIMARY must be unique') 
+							// 			return reject(err)
+
+							// }
 							;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailProfile({Email:user.emails[0].value.toLowerCase()}))
 							if(err) throw (err)
 							personuid = care.uid
 							if (care === null) { // create user
+								let password = entropy.string();
 								;[err, care] = await to (Familyfe.Person.beget({
 									Name:user.displayName, 
 									Gender: "Male",
+									Emailprofiles:{
+										Email:user.emails[0].value.toLowerCase(), 
+										Password:password,
+										Cpassword:password, 
+										IsActive:false,
+										},
 									Githubs:{
 										Email:user.emails[0].value.toLowerCase(), 
 										gituid:user.id,
 										IsActive:true,
+										ProfilePic: user.photos[0].value
 										},
 									IsActive:true,
 									Families: [1]

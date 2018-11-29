@@ -1100,7 +1100,52 @@ class EmailProfile
 					{model:self.sequelize.models.Facebook},
 					{
 						model:self.sequelize.models.Emailprofile,
-						attributes: ['Email', 'IsActive']
+						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
+					}
+				]
+			}
+		))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+
+	async update(data, where) {
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Emailprofile.update(data, {where: where}))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	
+	async delete(where) {
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Emailprofile.destroy({where}))		
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+
+
+	async whichPersonwithEmailid(emailid, moreAttributes) {
+		let self = this
+		let attributes = {
+			person: ['uid','Name', 'Gender', 'IsActive']
+		}
+		let [err, care] = await to(self.sequelize.models.Person.findOne({
+			attributes:attributes.person,
+			include: 
+				[
+					{model:self.sequelize.models.Github},
+					{model:self.sequelize.models.Google},
+					{model:self.sequelize.models.Facebook},
+					{
+						model:self.sequelize.models.Emailprofile,
+						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic'],
+						where: {emailuid: emailid}
 					}
 				]
 			}
@@ -1160,7 +1205,7 @@ class GitProfile
 					{model:self.sequelize.models.Facebook},
 					{
 						model:self.sequelize.models.Emailprofile,
-						attributes: ['Email', 'IsActive']
+						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
 					}
 				]
 			}
@@ -1220,7 +1265,7 @@ class FbProfile
 					{model:self.sequelize.models.Facebook},
 					{
 						model:self.sequelize.models.Emailprofile,
-						attributes: ['Email', 'IsActive']
+						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
 					}
 				]
 			}
