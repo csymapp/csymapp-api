@@ -1227,6 +1227,151 @@ class GitProfile
 		}
 		return care;
 	}
+
+	async whichPersonwithGituid(guid, moreAttributes) {
+		let self = this
+		let attributes = {
+			person: ['uid','Name', 'Gender', 'IsActive']
+		}
+		let [err, care] = await to(self.sequelize.models.Person.findOne({
+			attributes:attributes.person,
+			include: 
+				[
+					{model:self.sequelize.models.Google},
+					{model:self.sequelize.models.Emailprofile},
+					{model:self.sequelize.models.Facebook},
+					{
+						model:self.sequelize.models.Github,
+						attributes: ['Name', 'Email', 'IsActive', 'ProfilePic', 'gituid'],
+						where: {gituid: guid}
+					}
+				]
+			}
+		))
+		// console.log(err)
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	async update(data, where) {
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Github.update(data, {where: where, individualHooks: true}))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	
+	async delete(where) {
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Github.destroy({where}))		
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+}
+
+class GoogleProfile 
+{
+	constructor(sequelize)
+	{
+		// super();
+		let self = this;
+		self.sequelize = sequelize;
+		// self.People = self.Person = new Person(sequelize);
+		// self.Families = self.Family = new family;
+		// self.FamilyMembers = self.familyMembers = new familyMembers;
+	}
+	
+	async whichGoogleProfile(profile) {
+		
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Google.findOne({where:profile}))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	async whichPerson(uid, moreAttributes) {
+		let self = this
+		let attributes = {
+			person: ['uid','Name', 'Gender', 'IsActive']
+		}
+		let [err, care] = await to(self.sequelize.models.Person.findOne({
+			where:{uid},
+			attributes:attributes.person,
+			include: 
+				[
+					{model:self.sequelize.models.Github},
+					{model:self.sequelize.models.Google},
+					{model:self.sequelize.models.Facebook},
+					{
+						model:self.sequelize.models.Emailprofile,
+						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
+					}
+				]
+			}
+		))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	async whichPersonwithGuid(guid, moreAttributes) {
+		let self = this
+		let attributes = {
+			person: ['uid','Name', 'Gender', 'IsActive']
+		}
+		let [err, care] = await to(self.sequelize.models.Person.findOne({
+			attributes:attributes.person,
+			include: 
+				[
+					{model:self.sequelize.models.Github},
+					{model:self.sequelize.models.Emailprofile},
+					{model:self.sequelize.models.Facebook},
+					{
+						model:self.sequelize.models.Google,
+						attributes: ['Name', 'Email', 'IsActive', 'ProfilePic', 'guid'],
+						where: {guid: guid}
+					}
+				]
+			}
+		))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	async update(data, where) {
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Google.update(data, {where: where, individualHooks: true}))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	
+	async delete(where) {
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Google.destroy({where}))		
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	async addProfile(profile) {
+		let self = this;
+		let [err, care] = []
+		;[err, care] = await to(self.sequelize.models.Google.create(profile))
+
+		if(err) {
+			console.log(err)
+			let {a} = err.message || err.msg
+			return Promise.reject({msg:err.msg||err.errors[0].message||err.message||err, code:err.code||422, status:422})
+		}
+		return care;
+	}
 }
 
 class FbProfile 
@@ -1303,6 +1448,7 @@ module.exports = (sequelize) => {
 	module.EmailProfile = new EmailProfile(sequelize);
 	module.GitProfile = new GitProfile(sequelize);
 	module.FbProfile = new FbProfile(sequelize);
+	module.GoogleProfile = new GoogleProfile(sequelize);
 		// World: new World(sequelize),
 		// Person: new Person(sequelize),
 		// Family: new Family(sequelize)

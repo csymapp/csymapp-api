@@ -98,3 +98,5 @@ Please see the [docs](docs/TOC.md) on how to create applications using csymapp.
 - Redirect after login
     - [x] Github
 **[⬆ back home](#table-of-contents)**
+
+[instructions](https://support.google.com/cloud/answer/6158849?hl=en-GB#authorized-domains)

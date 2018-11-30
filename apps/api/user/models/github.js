@@ -10,7 +10,12 @@ module.exports = (sequelize, DataTypes) => {
 		token: DataTypes.STRING,
 		Name: DataTypes.STRING,
 		Email: DataTypes.STRING,
-		ProfilePic: DataTypes.STRING
+		ProfilePic: DataTypes.STRING,
+		IsActive: {
+			type: DataTypes.BOOLEAN, 
+			allowNull: false, 
+			defaultValue: false
+		},
 	},
 	{
 		hooks: {

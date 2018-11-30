@@ -7,6 +7,7 @@ const to = require('await-to-js').to
 ,moment = require('moment')
 , { Entropy } = require('entropy-string')
 , entropy = new Entropy({ total: 1e6, risk: 1e9 })
+, base64url = require('base64url');
 
 /*
  * log in
@@ -100,16 +101,15 @@ class Auth extends csystem{
 				req.headers['authorization'] = `bearer ${req.query.token}`
 			else if(req.body.token)
 			req.headers['authorization'] = `bearer ${req.body.token}`
-		// console.log(req.headers)
 		// console.log(req.query)
 		// console.log(req.body)
 		;[err, care] = await to(self.isAuthenticated(res, req))
+		
 		if(err) throw (err)
 		
 		let person = JSON.parse(JSON.stringify(care))
 		let token = passport.generateToken({id:person.uid});
 		person.token = token
-		// console.log(person)
 		res.json(person)
 	}
 
@@ -142,29 +142,13 @@ class Auth extends csystem{
 						// let err = err1
 						if(err) {
 							if(err.message === 'jwt expired' || err.message === 'invalid token') throw err 
-							// if there is a person that is logged in, then add to his person this profile
-							// if(loggedInPerson) {
-							// 	let profile = {
-							// 		Email:user.emails[0].value.toLowerCase(), 
-							// 		gituid:user.id,
-							// 		IsActive:true,
-							// 		PersonUid:care.uid,
-							// 		ProfilePic: user.photos[0].value
-							// 	}
-							// 	personuid = care.uid;
-							// 	;[err, care] = await to (Familyfe.GitProfile.addProfile(profile))
-							// 	if(err) 
-							// 		if (err.msg !== 'PRIMARY must be unique') 
-							// 			return reject(err)
-
-							// }
 							;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailProfile({Email:user.emails[0].value.toLowerCase()}))
 							if(err) throw (err)
 							personuid = care.uid
 							if (care === null) { // create user
 								let password = entropy.string();
 								;[err, care] = await to (Familyfe.Person.beget({
-									Name:user.displayName, 
+									Name:user.displayName || 'Some Anon User',
 									Gender: "Male",
 									Emailprofiles:{
 										Email:user.emails[0].value.toLowerCase(), 
@@ -190,7 +174,7 @@ class Auth extends csystem{
 								if(Object.keys(care).length === 0) {
 									let password = entropy.string();
 									;[err, care] = await to (Familyfe.Person.beget({
-										Name:user.displayName, 
+										Name:user.displayName || 'Some Anon User',
 										Gender: "Male",
 										Emailprofiles:{
 											Email:user.emails[0].value.toLowerCase(), 
@@ -227,6 +211,7 @@ class Auth extends csystem{
 
 						} else {
 							// user is logged in. Add profile to this user
+							personuid = care.uid
 							let profile = {
 								Email:user.emails[0].value.toLowerCase(), 
 								gituid:user.id,
@@ -273,117 +258,8 @@ class Auth extends csystem{
 			throw(err)
 
 		})
-		res.json(care)
 	}
 
-	async google(req, res, next) {
-		let self = this
-		let [err, care, dontcare] = []
-		
-		let redirectUrl = req.query.redirecturl || req.query.redirect
-		let token = req.query.token
-		let returned = req.params.v2
-
-		req.headers['content-type'] = 'application/json'
-		req.headers['authorization'] = `bearer ${token}`
-		;[err, care] = await to(self.isAuthenticated(res, req))
-		// console.log(req.headers)
-		let personuid;
-
-		let __promisifiedPassportAuthentication = async function () {
-		    return new Promise((resolve, reject) => {
-		        passport.authenticate('google', { session:false}, async (errinner, user, info) => {
-					if(errinner) return reject(errinner)
-					
-					// if(returned) {
-					// 	if(err) {
-					// 		if(err.message === 'jwt expired' || err.message === 'invalid token') throw err 
-					// 		// not logged in; create new user
-
-					// 		// check for user who aleady had that email address, if he exists, then just add to that user
-					// 		;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailProfile({Email:user.emails[0].value.toLowerCase()}))
-					// 		if(err) throw (err)
-					// 		personuid = care.uid
-					// 		if (care === null) { // create user
-					// 			;[err, care] = await to (Familyfe.Person.beget({
-					// 				Name:user.displayName, 
-					// 				Gender: "Male",
-					// 				Githubs:{
-					// 					Email:user.emails[0].value.toLowerCase(), 
-					// 					gituid:user.id,
-					// 					IsActive:true,
-					// 					},
-					// 				IsActive:true,
-					// 				Families: [1]
-								
-					// 			}))
-					// 			if(err) 
-					// 				if (err.msg !== 'PRIMARY must be unique') 
-					// 					return reject(err)
-					// 			// maybe account already exists...
-					// 		} else {
-					// 			let profile = {
-					// 				Email:user.emails[0].value.toLowerCase(), 
-					// 				gituid:user.id,
-					// 				IsActive:true,
-					// 				PersonUid:care.uid
-					// 			}
-					// 			;[err, care] = await to (Familyfe.GitProfile.addProfile(profile))
-					// 			if(err) 
-					// 				if (err.msg !== 'PRIMARY must be unique') 
-					// 					return reject(err)
-					// 		}
-							
-
-					// 	} else {
-					// 		// user is logged in. Add profile to this user
-					// 		let profile = {
-					// 			Email:user.emails[0].value.toLowerCase(), 
-					// 			gituid:user.id,
-					// 			IsActive:true,
-					// 			PersonUid:care.uid
-					// 		}
-					// 		;[err, care] = await to (Familyfe.GitProfile.addProfile(profile))
-					// 		if(err) 
-					// 			if (err.msg !== 'PRIMARY must be unique') 
-					// 				return reject(err)
-					// 	}
-
-					// 	// create token for this user
-					// 	// res.json(user)
-
-					// 	;[err, care] =  await to (Familyfe.EmailProfile.whichPerson(personuid))
-					// 	if(err)return reject(err)
-					// 	let person = care
-					// 	person = JSON.parse(JSON.stringify(person))
-					// 	let token = passport.generateToken({id:person.uid});
-					// 	person.token = token
-					// 	if(redirectUrl) {
-					// 		(redirectUrl.indexOf('?') > -1)?redirectUrl += `&`: redirectUrl += `?`
-					// 		redirectUrl += `?token=${token}`
-					// 		res.redirect(`${redirectUrl}`);
-					// 	}
-					// 	else res.json(person)
-					// } 
-					
-					
-		        })(req, res, next) 
-
-		    })
-		}
-
-		return __promisifiedPassportAuthentication().catch((err)=>{
-			// console.log(err)
-			// return Promise.reject(err)
-			throw(err)
-
-		})
-
-		
-		
-		res.json(care)
-	}
-	
 	async facebook(req, res, next) {
 		let self = this
 		let [err, care, dontcare] = []
@@ -491,6 +367,187 @@ class Auth extends csystem{
 		
 		
 		res.json(care)
+	}
+	async google(req, res, next) {
+		let self = this
+		let [err, care, dontcare] = []
+		
+		let state = req.query.state || ''
+		let tmp = base64url.decode(state)
+		try{
+			tmp = JSON.parse(tmp)
+		}catch(error){
+			tmp = {}
+		}
+
+		let returned = req.params.v2
+		let redirecturl1;// = req.query.redirecturl || req.query.redirect || tmp.redirecturl || tmp.redirect 
+		let token;// = req.query.token || tmp.token
+		if(returned) {
+			redirecturl1 = tmp.redirecturl || tmp.redirect 
+			token = tmp.token
+		} else {
+			redirecturl1 = req.query.redirecturl || req.query.redirect
+			token =  req.query.token
+		}
+
+		req.headers['content-type'] = 'application/json'
+		req.headers['authorization'] = `bearer ${token}`
+		;[err, care] = await to(self.isAuthenticated(res, req))
+
+		
+		// console.log(req.headers)
+		let personuid;
+
+		// let token1 = req.query.token
+		let token1 = token
+		// let redirecturl1 = req.query.redirect
+		let extra = {};
+		
+		if(token1) {
+			extra.token = token1
+		}
+		if(redirecturl1) {
+			extra.redirecturl = redirecturl1
+		}
+		state = base64url.encode(JSON.stringify(extra))
+
+		let __promisifiedPassportAuthentication = async function () {
+		    return new Promise((resolve, reject) => {
+		        passport.authenticate('google', { session:false, scope:'https://www.googleapis.com/auth/userinfo.email', state:state}, async (errinner, user, info) => {
+					if(errinner) return reject(errinner)
+					// if(returned) {
+						// let err = err1
+						if(err) {
+							if(err.message === 'jwt expired' || err.message === 'invalid token') throw err 
+							;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailProfile({Email:user.emails[0].value.toLowerCase()}))
+							if(err) throw (err)
+							personuid = care.uid
+							if (care === null) { // create user
+								let password = entropy.string();
+								;[err, care] = await to (Familyfe.Person.beget({
+									Name:user.displayName || 'Some Anon User',
+									Gender: "Male",
+									Emailprofiles:{
+										Email:user.emails[0].value.toLowerCase(), 
+										Password:password,
+										Cpassword:password, 
+										IsActive:false,
+										},
+									Googles:{
+										Email:user.emails[0].value.toLowerCase(), 
+										gituid:user.id,
+										IsActive:true,
+										ProfilePic: user.photos[0].value
+										},
+									IsActive:true,
+									Families: [1]
+								
+								}))
+								if(err) 
+									if (err.msg !== 'PRIMARY must be unique') 
+										return reject(err)
+								// maybe account already exists...
+							} else {
+								if(Object.keys(care).length === 0) {
+									let password = entropy.string();
+									;[err, care] = await to (Familyfe.Person.beget({
+										Name:user.displayName || 'Some Anon User',
+										Gender: "Male",
+										Emailprofiles:{
+											Email:user.emails[0].value.toLowerCase(), 
+											Password:password,
+											Cpassword:password, 
+											IsActive:false,
+											},
+										Googles:{
+											Email:user.emails[0].value.toLowerCase(), 
+											guid:user.id,
+											IsActive:true,
+											ProfilePic: user.photos[0].value
+											},
+										IsActive:true,
+										Families: [1]
+									
+									}))
+									if(err) throw(err)
+								}
+								let profile = {
+									Email:user.emails[0].value.toLowerCase(), 
+									guid:user.id,
+									IsActive:true,
+									PersonUid:care.uid,
+									ProfilePic: user.photos[0].value
+								}
+								personuid = care.uid;
+								;[err, care] = await to (Familyfe.GoogleProfile.addProfile(profile))
+								if(err) 
+									if (err.msg !== 'PRIMARY must be unique') 
+										return reject(err)
+							}
+							
+
+						} else {
+							// user is logged in. Add profile to this user
+							personuid = care.uid
+							let profile = {
+								Email:user.emails[0].value.toLowerCase(), 
+								guid:user.id,
+								IsActive:true,
+								PersonUid:care.uid,
+								ProfilePic: user.photos[0].value
+							}
+							;[err, care] = await to (Familyfe.GoogleProfile.addProfile(profile))
+							// console.log(care)
+							if(err) 
+								if (err.msg !== 'PRIMARY must be unique') 
+									return reject(err)
+						}
+
+						// create token for this user
+						// res.json(user)
+
+						;[err, care] =  await to (Familyfe.EmailProfile.whichPerson(personuid))
+						if(err)return reject(err)
+						let person = care
+						person = JSON.parse(JSON.stringify(person))
+						let token = passport.generateToken({id:person.uid});
+						person.token = token
+
+						// log login
+						;[err, care] = await to(Familyfe.GoogleProfile.whichGoogleProfile({Email: user.emails[0].value.toLowerCase()}))
+						self.LogloginAttempt(req, {Success: true, "PersonUid": person.uid, "GithubGituid": care.gituid})
+
+
+						state = req.query.state || ''
+						let tmp = base64url.decode(state)
+						// console.log(tmp)
+						try{
+							tmp = JSON.parse(tmp)
+						}catch(error){
+							tmp = {}
+						}
+						let redirectUrl = tmp.redirecturl
+						if(redirectUrl) {
+							(redirectUrl.indexOf('?') > -1)?redirectUrl += `&`: redirectUrl += `?`
+							redirectUrl += `token=${token}`
+							res.redirect(`${redirectUrl}`);
+						}
+						else res.json(person)
+					
+					
+		        })(req, res, next) 
+
+		    })
+		}
+
+		return __promisifiedPassportAuthentication().catch((err)=>{
+			// console.log(err)
+			// return Promise.reject(err)
+			throw(err)
+
+		})
+				
 	}
 
 	

@@ -12,26 +12,27 @@ class Profile extends csystem{
 		super()
 	}
     
-    async patchEmailProfile(req, res) {
+    async patchGithubProfile(req, res) {
 		let self = this;
-		let emailid = req.params.v1
-		
+		let gituid = req.params.v1
 		let [err, care] = []
 		;[err, care] = await to(self.isAuthenticated(res, req))
 		if(err) throw err;
 		let authuid = care.uid
-		;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailid(emailid))
+		console.log(req.body)
+		;[err, care] = await to (Familyfe.GitProfile.whichPersonwithGituid(gituid))
 		if(care === null) throw ({ status:422, message:"can't set for another user"})
 		let uidtoMod = care.uid;
+		console.log(`${authuid} vs ${uidtoMod}`)
 		if(authuid !== uidtoMod)throw ({ status:422, message:"can't set for another user"})
-
+		
 		if (authuid !== uidtoMod) {
 			throw ({ status:422, message:"can't set for another user"})
 		}
 
 		
 		let data = JSON.parse(JSON.stringify(req.body))
-		;[err, care] = await to (Familyfe.EmailProfile.update(data, {emailuid:emailid}))
+		;[err, care] = await to (Familyfe.GitProfile.update(data, {gituid:gituid}))
 		if(err) throw (err)
 		;[err, care] = await to (Familyfe.EmailProfile.whichPerson(uidtoMod))
 		if(err) throw (err)
@@ -39,15 +40,15 @@ class Profile extends csystem{
     }
 
 	
-    async deleteEmailProfile(req, res) {
+    async deleteGithubProfile(req, res) {
 		let self = this;
-		let emailid = req.params.v1
+		let gituid = req.params.v1
 		
 		let [err, care] = []
 		;[err, care] = await to(self.isAuthenticated(res, req))
 		if(err) throw err;
 		let authuid = care.uid
-		;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailid(emailid))
+		;[err, care] = await to (Familyfe.GitProfile.whichPersonwithGituid(gituid))
 		if(care === null) throw ({ status:422, message:"can't set for another user"})
 		let uidtoMod = care.uid;
 		
@@ -58,7 +59,7 @@ class Profile extends csystem{
 		}
 
 		let data = JSON.parse(JSON.stringify(req.body))
-		;[err, care] = await to (Familyfe.EmailProfile.delete({emailuid:emailid}))
+		;[err, care] = await to (Familyfe.GitProfile.delete({gituid:gituid}))
 
 		;[err, care] = await to (Familyfe.EmailProfile.whichPerson(uidtoMod))
 		// console.log(care)
@@ -75,12 +76,12 @@ class Profile extends csystem{
 			
 		switch(method) {
 			case 'PATCH':
-				;[err, care] = await to(self.patchEmailProfile(req, res));
+				;[err, care] = await to(self.patchGithubProfile(req, res));
 				if (err) throw err
 				res.json(care)	
 				break;			
 			case 'DELETE':
-				;[err, care] = await to(self.deleteEmailProfile(req, res));
+				;[err, care] = await to(self.deleteGithubProfile(req, res));
 				if (err) throw err
 				res.json(care)	
 				break;

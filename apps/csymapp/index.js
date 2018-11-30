@@ -8,6 +8,8 @@ csystem = require(__dirname+"/../csystem").csystem,
 ,Auth = require(__dirname+"/auth")
 ,Profile = require(__dirname+"/profile")
 ,EmailProfile = require(__dirname+"/profiles/email")
+,GoogleProfile = require(__dirname+"/profiles/google")
+,GithubProfile = require(__dirname+"/profiles/github")
 
 class csymapp extends csystem {
 
@@ -47,6 +49,18 @@ class csymapp extends csystem {
     async emailprofile(req, res, next) {
         let [err, care] = [];
         ;[err, care] = await to(EmailProfile.main(req, res, next));
+        if(err) throw (err)
+    }
+
+    async googleprofile(req, res, next) {
+        let [err, care] = [];
+        ;[err, care] = await to(GoogleProfile.main(req, res, next));
+        if(err) throw (err)
+    }
+    
+    async githubprofile(req, res, next) {
+        let [err, care] = [];
+        ;[err, care] = await to(GithubProfile.main(req, res, next));
         if(err) throw (err)
     }
 

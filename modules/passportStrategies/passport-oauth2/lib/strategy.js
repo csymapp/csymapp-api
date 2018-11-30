@@ -132,26 +132,26 @@ OAuth2Strategy.prototype.authenticate = function(req, options) {
     }
   }
 
-  let token = req.query.token
-  let redirecturl = req.query.redirect
-  let extra = '';
-  if (token || redirecturl) {
-    extra += '?'
-  }
-  if(token) {
-    extra += `token=${token}`
-  }
-  if(redirecturl) {
-    if (token) {
-      extra += `&`
-    }
-    extra += `redirect=${redirecturl}`
-  }
+  // let token = req.query.token
+  // let redirecturl = req.query.redirect
+  // let extra = '';
+  // if (token || redirecturl) {
+  //   extra += '?'
+  // }
+  // if(token) {
+  //   extra += `token=${token}`
+  // }
+  // if(redirecturl) {
+  //   if (token) {
+  //     extra += `&`
+  //   }
+  //   extra += `redirect=${redirecturl}`
+  // }
 
   var callbackURL = options.callbackURL || this._callbackURL;
   if (callbackURL) {
     var parsed = url.parse(callbackURL);
-    callbackURL += extra
+    // callbackURL += extra
     if (!parsed.protocol) {
       // The callback URL is relative, resolve a fully qualified URL from the
       // URL of the originating request.
