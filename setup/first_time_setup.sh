@@ -225,7 +225,8 @@ main() {
 	tput bold;  echo "Mr. Brian: I am now installing node modules for you."; tput sgr0
 	pwd
 	cd ../
-	yarn install
+	# yarn install
+	npm install
 
 	#Setup default users
 	askYesNoQuestion "Would you like to set up default users now? Please answer Yes if this is the first time you are setting up this system or if you have replaced your databases" "setupDefaultUsers?"
