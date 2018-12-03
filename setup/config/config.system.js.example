@@ -96,6 +96,12 @@ const config = {
             replyTo: process.env.REPLYTO_EMAIL,
             noReplyEmail: process.env.NOREPLY_EMAIL,
         }
+    },
+    callbacks: {
+        facebook:'/csymapp/auth/facebook/callback',
+        google:'/csymapp/auth/google/callback',
+        twitter:'/csymapp/auth/twitter/callback',
+        github:'csymapp/auth/github/callback',
     }
 };
 

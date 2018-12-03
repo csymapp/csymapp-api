@@ -1,12 +1,13 @@
 const passport = require('passport');
 const JwtStrategy = require('passport-jwt').Strategy;
-const ExtractJwt = require('passport-jwt').ExtractJwt;
+const ExtractJwt = require('passport-jwt').ExtractJwt; // Not used
 const InstagramStrategy = require('passport-instagram').Strategy;
-const LocalStrategy = require('passport-local').Strategy;
-const FacebookStrategy = require('passport-facebook').Strategy;
-const TwitterStrategy = require('passport-twitter').Strategy;
-const GitHubStrategy = require('passport-github').Strategy;
-const GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
+// const LocalStrategy = require('passport-local').Strategy; // Not used
+const FacebookStrategy = require(__dirname+'/../modules/passportStrategies/passport-facebook').Strategy;
+// const TwitterStrategy = require('passport-twitter').Strategy;
+const TwitterStrategy = require(__dirname+'/../modules/passportStrategies/passport-twitter').Strategy;
+const GitHubStrategy = require(__dirname+'/../modules/passportStrategies/passport-github').Strategy;
+const GoogleStrategy = require(__dirname+'/../modules/passportStrategies/passport-google-oauth').OAuth2Strategy;
 const LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
 const OpenIDStrategy = require('passport-openid').Strategy;
 const OAuthStrategy = require('passport-oauth').OAuthStrategy;
@@ -15,21 +16,12 @@ const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const fse = require('fs-extra');
 const request = require('request');
-
 const to = require('await-to-js').to
-// const csyberUser = require(__dirname+'/../apps/csystem/models/csyberuser');
+,EmailStrategy = require(__dirname+'/../modules/passportStrategies/passport-email')
 
-// const User = require(__dirname+'/../apps/csystem/models/User');
-//const User = require('../models/csyberuser');
-
-// console.log(__dirname+'/../apps/csystem')
-// console.log(require(__dirname+'/../apps/csystem'))
-//////////////////
-//use as require(__dirname+'/../apps/csystem/models') and not
-//require(__dirname+'/../apps/csystem').models
-///////
 const {sequelize} = require(__dirname+'/../apps/csystem/models')
 const Familyfe = require(__dirname+'/../modules/node-familyfe')(sequelize)
+,config = require(__dirname+'/config.system')
 
 
 if (fse.existsSync('.env'))
@@ -49,44 +41,62 @@ passport.deserializeUser((id, done) => {
 
 passport.generateToken = (user)=>  {  
   let token = jwt.sign({id: user.id}, process.env.JWT_SECRET, {
-      expiresIn: 1000
+      expiresIn: 3600
   });
-  // console.log(token)
   return token
 }
 
 /**
- * Sign in using Email and Password.
+ * Sign in using Email Profile.
  */
-passport.use( new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
-  let [err, dontcare, care] = [];
-  let person = {Email: email}
+passport.use( new EmailStrategy({ usernameField: 'email' }, async (email, password, done) => {
 
-  ;[err, care] = await to (Familyfe.Person.whichwithPwd(person))
+  let [err, dontcare, care] = [];
+  let profile = {Email: email}
+
+  ;[err, care] = await to (Familyfe.EmailProfile.whichEmailProfile(profile))
   if(err)return done(err)
 
   let user = care
   if(Object.keys(care).length === 0)return done({"message": "No such user", status:422});
   let IsActive = user.IsActive
   if(IsActive === false)
-      return done({ message: `Email ${email} not Active. Please activate.`, status:422});
-  // console.log(user)
+      return done({ message: `Email ${email} is not active. Please activate.`, status:422});
   [err, care] = await to(user.comparePass(password))
   if(err) return done(err)
-  if(care === false)return done({ message: 'Wrong email or password.' })
+  if(care === false) {
+    ;[err, care] =  await to (Familyfe.EmailProfile.whichPerson(user.PersonUid))
+    if(err) return done({ message: 'Wrong email or password.' , emailid: user.emailuid})
+    let person = care
+    person = JSON.parse(JSON.stringify(person))
+  
+    return done({ message: 'Wrong email or password.' , emailid: user.emailuid, uid: person.uid})
+  }
 
   user = JSON.parse(JSON.stringify(user))
-  delete user.Password
-  let token = passport.generateToken({id:user.uid});
-  user.token = token
-  return done (null, user)
+  
+  ;[err, care] =  await to (Familyfe.EmailProfile.whichPerson(user.PersonUid))
+  if(err)return done(err)
+
+  let person = care
+  person = JSON.parse(JSON.stringify(person))
+  
+  let token = passport.generateToken({id:person.uid});
+  person.token = token
+  return done (null, {person, emailid:user.emailuid})
 
 }));
 
 
-passport.use( new JwtStrategy({jwtFromRequest:ExtractJwt.fromAuthHeaderAsBearerToken(),  secretOrKey:process.env.JWT_SECRET }, async (jwt_payload, next) => {
+passport.use( new JwtStrategy({
+    jwtFromRequest: 
+            function (req) {
+              if(!req.req.headers.authorization) return null
+              return req.req.headers.authorization.split(' ')[1] || null
+          },
+    secretOrKey:process.env.JWT_SECRET }, async (jwt_payload, done) => {
   let person = {uid: jwt_payload.id}
-  ;[err, care] = await to (Familyfe.Person.whichwithPwd(person))
+  ;[err, care] = await to (Familyfe.EmailProfile.whichPerson(person.uid))
   if(err)return done(err)
 
   let user = care
@@ -98,26 +108,26 @@ passport.use( new JwtStrategy({jwtFromRequest:ExtractJwt.fromAuthHeaderAsBearerT
   user = JSON.parse(JSON.stringify(user))
   delete user.Password
   if (user) {
-    next(null, user);
+    done(null, user);
   } else {
-    next(null, false);
+    done(null, false);
   }
 }))
 
 /**
- * OAuth Strategy Overview
- *
- * - User is already logged in.
- *   - Check if there is an existing account with a provider id.
- *     - If there is, return an error message. (Account merging not supported)
- *     - Else link new OAuth account with currently logged-in user.
- * - User is not logged in.
- *   - Check if it's a returning user.
- *     - If returning user, sign in and we are done.
- *     - Else check if there is an existing account with user's email.
- *       - If there is, return an error message.
- *       - Else create a new account.
+ * Sign in with GitHub.
  */
+
+passport.use(new GitHubStrategy({
+  clientID: process.env.GITHUB_ID,
+  clientSecret: process.env.GITHUB_SECRET,
+  callbackURL: config.get('/callbacks/github'),
+  passReqToCallback: true
+}, async (req, accessToken, refreshToken, profile, done) => {
+  let githubid = profile.id
+  
+  return done(null, profile);
+}));
 
 /**
  * Sign in with Facebook.
@@ -125,77 +135,14 @@ passport.use( new JwtStrategy({jwtFromRequest:ExtractJwt.fromAuthHeaderAsBearerT
 passport.use(new FacebookStrategy({
   clientID: process.env.FACEBOOK_ID,
   clientSecret: process.env.FACEBOOK_SECRET,
-  callbackURL: '/api/auth/facebook/callback',
+  // callbackURL: '/csymapp/auth/facebook/callback',
+  callbackURL: config.get('/callbacks/facebook'),
   profileFields: ['name', 'email', 'link', 'locale', 'timezone'],
   passReqToCallback: true
 }, (req, accessToken, refreshToken, profile, done) => {
-  console.log(accessToken)
-  console.log(refreshToken)
-  console.log(profile)
-  if (req.user) {
-    console.log(req.user)
-    User.findOne({ facebook: profile.id }, (err, existingUser) => {
-      if (err) { return done(err); }
-      if (existingUser) {
-        req.flash('errors', { msg: 'There is already a Facebook account that belongs to you. Sign in with that account or delete it, then link it with your current account.' });
-        done(err);
-      } else {
-        User.findById(req.user.id, (err, user) => {
-          if (err) { return done(err); }
-          user.facebook = profile.id;
-          user.email = profile._json.email;
-          user.tokens.push({ kind: 'facebook', accessToken });
-          user.profile.name = user.profile.name || `${profile.name.givenName} ${profile.name.familyName}`;
-          user.name.first = user.profile.name;
-          user.profile.gender = user.profile.gender || profile._json.gender;
-          user.profile.picture = user.profile.picture || `https://graph.facebook.com/${profile.id}/picture?type=large`;
-          user.save((err) => {
-            req.flash('info', { msg: 'Facebook account has been linked.' });
-            done(err, user);
-          });
-        });
-      }
-    });
-  } else {
-    User.findOne({ facebook: profile.id }, (err, existingUser) => {
-      if (err) { return done(err); }
-      if (existingUser) {
-        req.flash('success', { msg: 'Welcome. You have successfully logged in' });
-        return done(null, existingUser);
-      }
-      User.findOne({ email: profile._json.email }, (err, existingEmailUser) => {
-        if (err) { return done(err); }
-        if (existingEmailUser) {
-          req.flash('errors', { msg: 'There is already an account using this email address. Sign in to that account and link it with Facebook manually from Account Settings.' });
-          done(err);
-        } else {
-          const user = new User();
-          user.email = profile._json.email;
-          user.facebook = profile.id;
-          user.tokens.push({ kind: 'facebook', accessToken });
-          user.profile.name = `${profile.name.givenName} ${profile.name.familyName}`;
-          user.name.first = user.profile.name;
-          user.profile.gender = profile._json.gender;
-          user.profile.picture = `https://graph.facebook.com/${profile.id}/picture?type=large`;
-          user.profile.location = (profile._json.location) ? profile._json.location.name : '';
-          //user.save((err) => { done(err, user);});
-          csyberUser.socialcreate(JSON.parse(JSON.stringify(user)), function(err, id){
-              req.flash('info', { msg: 'Facebook account has been linked.' });
-              User.findById(id, done);
-          });
-        }
-      });
-    });
-  }
+  return done(null, profile);
+
 }));
-
-
-
-
-
-
-
-
 
 let __promisifiedPassportAuthentication = async (req) =>{
       return new Promise((resolve, reject) => {
@@ -213,226 +160,37 @@ let __promisifiedPassportAuthentication = async (req) =>{
 }
 
 
+/**
+ * Sign in with Twitter.
+ */
+passport.use(new TwitterStrategy({
+  consumerKey: process.env.TWITTER_KEY,
+  consumerSecret: process.env.TWITTER_SECRET,
+  callbackURL: config.get('/callbacks/twitter'),
+  userProfileURL: "https://api.twitter.com/1.1/account/verify_credentials.json?include_email=true",
+  passReqToCallback: true
+}, (req, accessToken, tokenSecret, profile, done) => {
+  return done(null, profile);
+}));
+
 
 /**
- * Sign in with GitHub.
+ * Sign in with Google.
  */
-passport.use(new GitHubStrategy({
-  clientID: process.env.GITHUB_ID,
-  clientSecret: process.env.GITHUB_SECRET,
-  callbackURL: 'api/auth/github/callback',
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_ID,
+  clientSecret: process.env.GOOGLE_SECRET,
+  callbackURL: config.get('/callbacks/google'),
   passReqToCallback: true
 }, async (req, accessToken, refreshToken, profile, done) => {
   let githubid = profile.id
-  ;[err, care] = await to (Familyfe.Person.which({github:{"gituid":githubid}}))
   
-  if(err) {
-    let msg = err.msg.parent.sqlMessage || err.message || err.msg
-    return done({ message: msg, status:422});
-  }
-
-  if(Object.keys(care).length === 0) { //no such user registered
-    console.log("checking use details....")
-   ; [err, care] = await to(__promisifiedPassportAuthentication(req));
-   if(err) { //create new user
-    //check if user with that email already exists
-    ;[err, care] = await to (Familyfe.Person.begetIn(profile._json, "github"))
-    // console.log(profile)
-    console.log(err)
-    console.log(care)
-    if(err) {
-      console.log("returning errr as")
-      console.log()
-      return done(err);
-    }
-   }
-   //else link to existing user..
-   // console.log(err)
-   // console.log(care)
-    //try linking user...
-    //check if user is logged in...
-    //create the user...
-
-  }
-  
-  return done(null, care);
-  if (req.user) {
-    User.findOne({ github: profile.id }, (err, existingUser) => {
-      if (existingUser) {
-        req.flash('errors', { msg: 'There is already a GitHub account that belongs to you. Sign in with that account or delete it, then link it with your current account.' });
-        done(err);
-      } else {
-        User.findById(req.user.id, (err, user) => {
-          if (err) { return done(err); }
-          user.github = profile.id;
-          user.tokens.push({ kind: 'github', accessToken });
-          user.profile.name = user.profile.name || profile.displayName;
-          user.name.first = user.profile.name;
-          user.profile.picture = user.profile.picture || profile._json.avatar_url;
-          user.profile.location = user.profile.location || profile._json.location;
-          user.profile.website = user.profile.website || profile._json.blog;
-          user.save((err) => {
-            req.flash('info', { msg: 'GitHub account has been linked.' });
-            done(err, user);
-          });
-        });
-      }
-    });
-  } else {
-    User.findOne({ github: profile.id }, (err, existingUser) => {
-      console.log(existingUser)
-      if (err) { return done(err); }
-      if (existingUser) {
-        req.flash('success', { msg: 'Welcome. You have successfully logged in' });
-        return done(null, existingUser);
-      }
-      User.findOne({ email: profile._json.email }, (err, existingEmailUser) => {
-        if (err) { return done(err); }
-        if (existingEmailUser) {
-          req.flash('errors', { msg: 'There is already an account using this email address. Sign in to that account and link it with GitHub manually from Account Settings.' });
-          done(err);
-        } else {
-          const user = new User();
-          user.email = profile._json.email;
-          user.github = profile.id;
-          user.tokens.push({ kind: 'github', accessToken });
-          user.profile.name = profile.displayName;
-          user.name.first = user.profile.name;
-          user.profile.picture = profile._json.avatar_url;
-          user.profile.location = profile._json.location;
-          user.profile.website = profile._json.blog;
-          //user.save((err) => { done(err, user);});
-          csyberUser.socialcreate(JSON.parse(JSON.stringify(user)), function(err, id){
-              req.flash('info', { msg: 'GitHub account has been linked.' });
-              User.findById(id, done);
-          });
-        }
-      });
-    });
-  }
+  return done(null, profile);
 }));
 
-// // Sign in with Twitter.
-
-// passport.use(new TwitterStrategy({
-//   consumerKey: process.env.TWITTER_KEY,
-//   consumerSecret: process.env.TWITTER_SECRET,
-//   callbackURL: '/auth/twitter/callback',
-//   passReqToCallback: true
-// }, (req, accessToken, tokenSecret, profile, done) => {
-//   if (req.user) {
-//     User.findOne({ twitter: profile.id }, (err, existingUser) => {
-//       if (err) { return done(err); }
-//       if (existingUser) {
-//         req.flash('errors', { msg: 'There is already a Twitter account that belongs to you. Sign in with that account or delete it, then link it with your current account.' });
-//         done(err);
-//       } else {
-//         User.findById(req.user.id, (err, user) => {
-//           if (err) { return done(err); }
-//           user.twitter = profile.id;
-//           user.tokens.push({ kind: 'twitter', accessToken, tokenSecret });
-//           user.profile.name = user.profile.name || profile.displayName;
-//           user.name.first = user.profile.name;
-//           user.profile.location = user.profile.location || profile._json.location;
-//           user.profile.picture = user.profile.picture || profile._json.profile_image_url_https;
-//           user.save((err) => {
-//             if (err) { return done(err); }
-//             req.flash('info', { msg: 'Twitter account has been linked.' });
-//             done(err, user);
-//           });
-//         });
-//       }
-//     });
-//   } else {
-//     User.findOne({ twitter: profile.id }, (err, existingUser) => {
-//       if (err) { return done(err); }
-//       if (existingUser) {
-//         req.flash('success', { msg: 'Welcome. You have successfully logged in' });
-//         return done(null, existingUser);
-//       }
-//       const user = new User();
-//       // Twitter will not provide an email address.  Period.
-//       // But a person’s twitter username is guaranteed to be unique
-//       // so we can "fake" a twitter email address as follows:
-//       user.email = `${profile.username}@twitter.com`;
-//       user.twitter = profile.id;
-//       user.tokens.push({ kind: 'twitter', accessToken, tokenSecret });
-//       user.profile.name = profile.displayName;
-//       user.name.first = user.profile.name;
-//       user.profile.location = profile._json.location;
-//       user.profile.picture = profile._json.profile_image_url_https;
-//       //user.save((err) => { done(err, user);});
-//       csyberUser.socialcreate(JSON.parse(JSON.stringify(user)), function(err, id){
-//               req.flash('info', { msg: 'Twitter account has been linked.' });
-//               User.findById(id, done);
-//           });
-//     });
-//   }
-// }));
-
-// /**
-//  * Sign in with Google.
-//  */
-// passport.use(new GoogleStrategy({
-//   clientID: process.env.GOOGLE_ID,
-//   clientSecret: process.env.GOOGLE_SECRET,
-//   callbackURL: '/auth/google/callback',
-//   passReqToCallback: true
-// }, (req, accessToken, refreshToken, profile, done) => {
-//   if (req.user) {
-//     User.findOne({ google: profile.id }, (err, existingUser) => {
-//       if (err) { return done(err); }
-//       if (existingUser) {
-//         req.flash('errors', { msg: 'There is already a Google account that belongs to you. Sign in with that account or delete it, then link it with your current account.' });
-//         done(err);
-//       } else {
-//         User.findById(req.user.id, (err, user) => {
-//           if (err) { return done(err); }
-//           user.google = profile.id;
-//           user.email = profile.emails[0].value;
-//           user.tokens.push({ kind: 'google', accessToken });
-//           user.profile.name = user.profile.name || profile.displayName;
-//           user.name.first = user.profile.name;
-//           user.profile.gender = user.profile.gender || profile._json.gender;
-//           user.profile.picture = user.profile.picture || profile._json.image.url;
-//           user.save((err) => {
-//             req.flash('info', { msg: 'Google account has been linked.' });
-//             done(err, user);
-//           });
-//         });
-//       }
-//     });
-//   } else {
-//     User.findOne({ google: profile.id }, (err, existingUser) => {
-//       if (err) { return done(err); }
-//       if (existingUser) {
-//         req.flash('success', { msg: 'Welcome. You have successfully logged in' });
-//         return done(null, existingUser);
-//       }
-//       User.findOne({ email: profile.emails[0].value }, (err, existingEmailUser) => {
-//         if (err) { return done(err); }
-//         if (existingEmailUser) {
-//           req.flash('errors', { msg: 'There is already an account using this email address. Sign in to that account and link it with Google manually from Account Settings.' });
-//           done(err);
-//         } else {
-//           const user = new User();
-//           user.email = profile.emails[0].value;
-//           user.google = profile.id;
-//           user.tokens.push({ kind: 'google', accessToken });
-//           user.profile.name = profile.displayName;
-//           user.name.first = user.profile.name;
-//           user.profile.gender = profile._json.gender;
-//           user.profile.picture = profile._json.image.url;
-//           //user.save((err) => { done(err, user);});
-//           csyberUser.socialcreate(JSON.parse(JSON.stringify(user)), function(err, id){
-//               req.flash('info', { msg: 'Google account has been linked.' });
-//               User.findById(id, done);
-//           });
-//         }
-//       });
-//     });
-//   }
-// }));
+/*
+ * Borrowed from https://github.com/sahat/hackathon-starter and not yet implemented here.
+ */
 
 // /**
 //  * Sign in with LinkedIn.
@@ -664,26 +422,25 @@ passport.use(new GitHubStrategy({
 //   }
 // ));
 
-/**
- * Login Required middleware.
- */
-exports.isAuthenticated = (req, res, next) => {
-  console.log("checking is authenticated...")
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  res.redirect('/login');
-};
+// /**
+//  * Login Required middleware.
+//  */
+// exports.isAuthenticated = (req, res, next) => {
+//   if (req.isAuthenticated()) {
+//     return next();
+//   }
+//   res.redirect('/login');
+// };
 
-/**
- * Authorization Required middleware.
- */
-exports.isAuthorized = (req, res, next) => {
-  const provider = req.path.split('/').slice(-1)[0];
-  const token = req.user.tokens.find(token => token.kind === provider);
-  if (token) {
-    next();
-  } else {
-    res.redirect(`/auth/${provider}`);
-  }
-};
+// /**
+//  * Authorization Required middleware.
+//  */
+// exports.isAuthorized = (req, res, next) => {
+//   const provider = req.path.split('/').slice(-1)[0];
+//   const token = req.user.tokens.find(token => token.kind === provider);
+//   if (token) {
+//     next();
+//   } else {
+//     res.redirect(`/auth/${provider}`);
+//   }
+// };
