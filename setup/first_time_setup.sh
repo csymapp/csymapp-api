@@ -180,9 +180,7 @@ setupDefaultUsers? () {
 createService() {
 	rootDir=$(pwd)
 	cd ../
-	echo "copying service files"
 	cd install
-	pwd
 	cp -r lib/ /
 	systemctl daemon-reload
 	systemctl enable csymapp-api.service
