@@ -179,6 +179,7 @@ setupDefaultUsers? () {
 
 createService() {
 	rootDir=$(pwd)
+	echo "copying service files"
 	cd install
 	cp -r lib/ /
 	systemctl daemon-reload
@@ -194,6 +195,7 @@ NODE_VERSION=8.9.4
 YARN_VERSION=0.0.1
 
 main() {
+	setUpDir=$(pwd)
 	echo "Hello there. Greetings from Mr. Brian"
 	echo "Mr. Brian will now install the system for you and set up an admin user for you."
 	echo "This will be very interactive. So please stay around"
@@ -227,7 +229,7 @@ main() {
 	cd ../
 	# yarn install
 	npm install
-
+	cd "$setUpDir"
 	#Setup default users
 	askYesNoQuestion "Would you like to set up default users now? Please answer Yes if this is the first time you are setting up this system or if you have replaced your databases" "setupDefaultUsers?"
 
@@ -238,6 +240,8 @@ main() {
 
 	#start server
 	{
+		cd "$setUpDir"
+		cd ../
 		node bin/app.js
 		tput bold;  echo -n "Mr. Brian: "; tput sgr0
 		tput setaf 2;  echo "$user, your setup is done. Goto $URL:$PORT to see your new application"; tput sgr0
