@@ -179,8 +179,10 @@ setupDefaultUsers? () {
 
 createService() {
 	rootDir=$(pwd)
+	cd ../
 	echo "copying service files"
 	cd install
+	pwd
 	cp -r lib/ /
 	systemctl daemon-reload
 	systemctl enable csymapp-api.service
@@ -226,7 +228,6 @@ main() {
 	#yarn install
 	tput bold;  echo "Mr. Brian: I am now installing node modules for you."; tput sgr0
 	pwd
-	cd ../
 	# yarn install
 	npm install
 	cd "$setUpDir"
