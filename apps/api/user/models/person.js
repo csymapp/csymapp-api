@@ -81,6 +81,14 @@ module.exports = (sequelize, DataTypes) => {
 			foreignKey: {
 				allowNull: false
 			}
+		});
+		
+	    Person.hasMany(models.Twitter, {
+	    	onDelete: "CASCADE",
+	    	onUpdate: "CASCADE",
+			foreignKey: {
+				allowNull: false
+			}
 	    });
 
 		Person.hasMany(models.Emailprofile, {

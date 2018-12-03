@@ -165,7 +165,8 @@ class Profile extends abstractProfile
 		self.socialLogins = [
 			{model: self.sequelize.models.Github},
 			{model: self.sequelize.models.Google},
-			{model: self.sequelize.models.Facebook}
+			{model: self.sequelize.models.Facebook},
+			{model:self.sequelize.models.Twitter}
 		]
 	}
 
@@ -318,7 +319,8 @@ class Person extends abstractPerson
 		self.socialLogins = [
 			{model: self.sequelize.models.Github},
 			{model: self.sequelize.models.Google},
-			{model: self.sequelize.models.Facebook}
+			{model: self.sequelize.models.Facebook},
+			{model:self.sequelize.models.Twitter}
 		]
 		self.Family = new Family(sequelize)
 
@@ -417,7 +419,8 @@ class Person extends abstractPerson
 			 	 			githubOptions,
 			 	 			{model:self.sequelize.models.Google},
 			 	 			{model:self.sequelize.models.Facebook},
-			 	 			{model:self.sequelize.models.Emailprofile}
+							{model:self.sequelize.models.Emailprofile},
+							{model:self.sequelize.models.Twitter}
 			 	 		]
         }
 
@@ -990,7 +993,8 @@ class World extends abstractWorld
  	 			{model:self.sequelize.models.Github},
  	 			{model:self.sequelize.models.Google},
  	 			{model:self.sequelize.models.Facebook},
- 	 			{model:self.sequelize.models.Emailprofile}
+				{model:self.sequelize.models.Emailprofile},
+				{model:self.sequelize.models.Twitter}
  	 		]
 		}))//or user .id
 		if(err)return Promise.reject({msg:err.msg||err, code:err.code||422, status:422})
@@ -1098,6 +1102,7 @@ class EmailProfile
 					{model:self.sequelize.models.Github},
 					{model:self.sequelize.models.Google},
 					{model:self.sequelize.models.Facebook},
+					{model:self.sequelize.models.Twitter},
 					{
 						model:self.sequelize.models.Emailprofile,
 						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
@@ -1142,6 +1147,7 @@ class EmailProfile
 					{model:self.sequelize.models.Github},
 					{model:self.sequelize.models.Google},
 					{model:self.sequelize.models.Facebook},
+					{model:self.sequelize.models.Twitter},
 					{
 						model:self.sequelize.models.Emailprofile,
 						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic'],
@@ -1203,6 +1209,7 @@ class GitProfile
 					{model:self.sequelize.models.Github},
 					{model:self.sequelize.models.Google},
 					{model:self.sequelize.models.Facebook},
+					{model:self.sequelize.models.Twitter},
 					{
 						model:self.sequelize.models.Emailprofile,
 						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
@@ -1240,6 +1247,7 @@ class GitProfile
 					{model:self.sequelize.models.Google},
 					{model:self.sequelize.models.Emailprofile},
 					{model:self.sequelize.models.Facebook},
+					{model:self.sequelize.models.Twitter},
 					{
 						model:self.sequelize.models.Github,
 						attributes: ['Name', 'Email', 'IsActive', 'ProfilePic', 'gituid'],
@@ -1306,6 +1314,7 @@ class GoogleProfile
 					{model:self.sequelize.models.Github},
 					{model:self.sequelize.models.Google},
 					{model:self.sequelize.models.Facebook},
+					{model:self.sequelize.models.Twitter},
 					{
 						model:self.sequelize.models.Emailprofile,
 						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
@@ -1330,6 +1339,7 @@ class GoogleProfile
 					{model:self.sequelize.models.Github},
 					{model:self.sequelize.models.Emailprofile},
 					{model:self.sequelize.models.Facebook},
+					{model:self.sequelize.models.Twitter},
 					{
 						model:self.sequelize.models.Google,
 						attributes: ['Name', 'Email', 'IsActive', 'ProfilePic', 'guid'],
@@ -1374,6 +1384,110 @@ class GoogleProfile
 	}
 }
 
+class TwitterProfile 
+{
+	constructor(sequelize)
+	{
+		// super();
+		let self = this;
+		self.sequelize = sequelize;
+		// self.People = self.Person = new Person(sequelize);
+		// self.Families = self.Family = new family;
+		// self.FamilyMembers = self.familyMembers = new familyMembers;
+	}
+	
+	async whichTwitterProfile(profile) {
+		
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Twitter.findOne({where:profile}))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	async whichPerson(uid, moreAttributes) {
+		let self = this
+		let attributes = {
+			person: ['uid','Name', 'Gender', 'IsActive']
+		}
+		let [err, care] = await to(self.sequelize.models.Person.findOne({
+			where:{uid},
+			attributes:attributes.person,
+			include: 
+				[
+					{model:self.sequelize.models.Github},
+					{model:self.sequelize.models.Google},
+					{model:self.sequelize.models.Facebook},
+					{model:self.sequelize.models.Twitter},
+					{
+						model:self.sequelize.models.Emailprofile,
+						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
+					}
+				]
+			}
+		))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	async whichPersonwithTuid(guid, moreAttributes) {
+		let self = this
+		let attributes = {
+			person: ['uid','Name', 'Gender', 'IsActive']
+		}
+		let [err, care] = await to(self.sequelize.models.Person.findOne({
+			attributes:attributes.person,
+			include: 
+				[
+					{model:self.sequelize.models.Github},
+					{model:self.sequelize.models.Emailprofile},
+					{model:self.sequelize.models.Facebook},
+					{model:self.sequelize.models.Google},
+					{
+						model:self.sequelize.models.Twitter,
+						attributes: ['Name', 'Email', 'IsActive', 'ProfilePic', 'tuid'],
+						where: {tuid: guid}
+					}
+				]
+			}
+		))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	async update(data, where) {
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Twitter.update(data, {where: where, individualHooks: true}))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	
+	async delete(where) {
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Twitter.destroy({where}))		
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	async addProfile(profile) {
+		let self = this;
+		let [err, care] = []
+		;[err, care] = await to(self.sequelize.models.Twitter.create(profile))
+
+		if(err) {
+			console.log(err)
+			let {a} = err.message || err.msg
+			return Promise.reject({msg:err.msg||err.errors[0].message||err.message||err, code:err.code||422, status:422})
+		}
+		return care;
+	}
+}
+
 class FbProfile 
 {
 	constructor(sequelize)
@@ -1408,6 +1522,7 @@ class FbProfile
 					{model:self.sequelize.models.Github},
 					{model:self.sequelize.models.Google},
 					{model:self.sequelize.models.Facebook},
+					{model:self.sequelize.models.Twitter},
 					{
 						model:self.sequelize.models.Emailprofile,
 						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
@@ -1415,6 +1530,50 @@ class FbProfile
 				]
 			}
 		))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	async whichPersonwithFbuid(guid, moreAttributes) {
+		let self = this
+		let attributes = {
+			person: ['uid','Name', 'Gender', 'IsActive']
+		}
+		let [err, care] = await to(self.sequelize.models.Person.findOne({
+			attributes:attributes.person,
+			include: 
+				[
+					{model:self.sequelize.models.Github},
+					{model:self.sequelize.models.Emailprofile},
+					{model:self.sequelize.models.Google},
+					{model:self.sequelize.models.Twitter},
+					{
+						model:self.sequelize.models.Facebook,
+						attributes: ['Name', 'Email', 'IsActive', 'ProfilePic', 'fbuid'],
+						where: {fbuid: guid}
+					}
+				]
+			}
+		))
+		console.log(guid)
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	async update(data, where) {
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Facebook.update(data, {where: where, individualHooks: true}))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	
+	async delete(where) {
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Facebook.destroy({where}))		
 		if(err) throw (err)
 		if(care === null) return {}
 		return care.dataValues
@@ -1449,6 +1608,7 @@ module.exports = (sequelize) => {
 	module.GitProfile = new GitProfile(sequelize);
 	module.FbProfile = new FbProfile(sequelize);
 	module.GoogleProfile = new GoogleProfile(sequelize);
+	module.TwitterProfile = new TwitterProfile(sequelize);
 		// World: new World(sequelize),
 		// Person: new Person(sequelize),
 		// Family: new Family(sequelize)

@@ -10,6 +10,8 @@ csystem = require(__dirname+"/../csystem").csystem,
 ,EmailProfile = require(__dirname+"/profiles/email")
 ,GoogleProfile = require(__dirname+"/profiles/google")
 ,GithubProfile = require(__dirname+"/profiles/github")
+,FacebookProfile = require(__dirname+"/profiles/facebook")
+,TwitterProfile = require(__dirname+"/profiles/twitter")
 
 class csymapp extends csystem {
 
@@ -63,6 +65,21 @@ class csymapp extends csystem {
         ;[err, care] = await to(GithubProfile.main(req, res, next));
         if(err) throw (err)
     }
+
+    async facebookprofile(req, res, next) {
+        let [err, care] = [];
+        ;[err, care] = await to(FacebookProfile.main(req, res, next));
+        if(err) throw (err)
+    }
+
+    
+    async twitterprofile(req, res, next) {
+        let [err, care] = [];
+        ;[err, care] = await to(TwitterProfile.main(req, res, next));
+        if(err) throw (err)
+    }
+
+
 
 
 }

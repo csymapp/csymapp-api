@@ -259,44 +259,76 @@ class Auth extends csystem{
 
 		})
 	}
-
+	
 	async facebook(req, res, next) {
 		let self = this
 		let [err, care, dontcare] = []
 		
-		let redirectUrl = req.query.redirecturl || req.query.redirect
-		let token = req.query.token
+		let state = req.query.state || ''
+		let tmp = base64url.decode(state)
+		try{
+			tmp = JSON.parse(tmp)
+		}catch(error){
+			tmp = {}
+		}
+
 		let returned = req.params.v2
+		let redirecturl1;// = req.query.redirecturl || req.query.redirect || tmp.redirecturl || tmp.redirect 
+		let token;// = req.query.token || tmp.token
+		if(returned) {
+			redirecturl1 = tmp.redirecturl || tmp.redirect 
+			token = tmp.token
+		} else {
+			redirecturl1 = req.query.redirecturl || req.query.redirect
+			token =  req.query.token
+		}
 
 		req.headers['content-type'] = 'application/json'
 		req.headers['authorization'] = `bearer ${token}`
 		;[err, care] = await to(self.isAuthenticated(res, req))
-		// console.log(req.headers)
+
 		let personuid;
 
-		console.log('na facebook')
-		// process.exit();
+		// let token1 = req.query.token
+		let token1 = token
+		// let redirecturl1 = req.query.redirect
+		let extra = {};
+		
+		if(token1) {
+			extra.token = token1
+		}
+		if(redirecturl1) {
+			extra.redirecturl = redirecturl1
+		}
+		state = base64url.encode(JSON.stringify(extra))
 
 		let __promisifiedPassportAuthentication = async function () {
 		    return new Promise((resolve, reject) => {
-		        passport.authenticate('facebook', { session:false}, async (errinner, user, info) => {
+		        passport.authenticate('facebook', { session:false, state:state, scope:['email']}, async (errinner, user, info) => {
 					if(errinner) return reject(errinner)
-					if(returned) {
+					// if(returned) {
+						// let err = err1
 						if(err) {
 							if(err.message === 'jwt expired' || err.message === 'invalid token') throw err 
-							// not logged in; create new user
-							// check for user who aleady had that email address, if he exists, then just add to that user
 							;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailProfile({Email:user.emails[0].value.toLowerCase()}))
 							if(err) throw (err)
 							personuid = care.uid
 							if (care === null) { // create user
+								let password = entropy.string();
 								;[err, care] = await to (Familyfe.Person.beget({
-									Name:user.name.givenName + user.name.familyName, 
+									Name:user.displayName || 'Some Anon User',
 									Gender: "Male",
+									Emailprofiles:{
+										Email:user.emails[0].value.toLowerCase(), 
+										Password:password,
+										Cpassword:password, 
+										IsActive:false,
+										},
 									Facebooks:{
 										Email:user.emails[0].value.toLowerCase(), 
 										fbuid:user.id,
 										IsActive:true,
+										ProfilePic: user.photod?user.photos[0].value : ''
 										},
 									IsActive:true,
 									Families: [1]
@@ -307,12 +339,37 @@ class Auth extends csystem{
 										return reject(err)
 								// maybe account already exists...
 							} else {
+								if(Object.keys(care).length === 0) {
+									let password = entropy.string();
+									;[err, care] = await to (Familyfe.Person.beget({
+										Name:user.displayName || 'Some Anon User',
+										Gender: "Male",
+										Emailprofiles:{
+											Email:user.emails[0].value.toLowerCase(), 
+											Password:password,
+											Cpassword:password, 
+											IsActive:false,
+											},
+										Facebooks:{
+											Email:user.emails[0].value.toLowerCase(), 
+											fbuid:user.id,
+											IsActive:true,
+											ProfilePic: user.photod?user.photos[0].value : ''
+											},
+										IsActive:true,
+										Families: [1]
+									
+									}))
+									if(err) throw(err)
+								}
 								let profile = {
 									Email:user.emails[0].value.toLowerCase(), 
 									fbuid:user.id,
 									IsActive:true,
-									PersonUid:care.uid
+									PersonUid:care.uid,
+									ProfilePic: user.photod?user.photos[0].value : ''
 								}
+								personuid = care.uid;
 								;[err, care] = await to (Familyfe.FbProfile.addProfile(profile))
 								if(err) 
 									if (err.msg !== 'PRIMARY must be unique') 
@@ -322,13 +379,16 @@ class Auth extends csystem{
 
 						} else {
 							// user is logged in. Add profile to this user
+							personuid = care.uid
 							let profile = {
 								Email:user.emails[0].value.toLowerCase(), 
 								fbuid:user.id,
 								IsActive:true,
-								PersonUid:care.uid
+								PersonUid:care.uid,
+								ProfilePic: user.photod?user.photos[0].value : ''
 							}
 							;[err, care] = await to (Familyfe.FbProfile.addProfile(profile))
+							// console.log(care)
 							if(err) 
 								if (err.msg !== 'PRIMARY must be unique') 
 									return reject(err)
@@ -343,13 +403,27 @@ class Auth extends csystem{
 						person = JSON.parse(JSON.stringify(person))
 						let token = passport.generateToken({id:person.uid});
 						person.token = token
+
+						// log login
+						;[err, care] = await to(Familyfe.FbProfile.whichFbProfile({Email: user.emails[0].value.toLowerCase()}))
+						self.LogloginAttempt(req, {Success: true, "PersonUid": person.uid, "FacebookFbuid": care.fbuid})
+
+
+						state = req.query.state || ''
+						let tmp = base64url.decode(state)
+						// console.log(tmp)
+						try{
+							tmp = JSON.parse(tmp)
+						}catch(error){
+							tmp = {}
+						}
+						let redirectUrl = tmp.redirecturl
 						if(redirectUrl) {
 							(redirectUrl.indexOf('?') > -1)?redirectUrl += `&`: redirectUrl += `?`
-							redirectUrl += `?token=${token}`
+							redirectUrl += `token=${token}`
 							res.redirect(`${redirectUrl}`);
 						}
 						else res.json(person)
-					} 
 					
 					
 		        })(req, res, next) 
@@ -363,10 +437,7 @@ class Auth extends csystem{
 			throw(err)
 
 		})
-
-		
-		
-		res.json(care)
+				
 	}
 	async google(req, res, next) {
 		let self = this
@@ -396,12 +467,9 @@ class Auth extends csystem{
 		;[err, care] = await to(self.isAuthenticated(res, req))
 
 		
-		// console.log(req.headers)
 		let personuid;
 
-		// let token1 = req.query.token
 		let token1 = token
-		// let redirecturl1 = req.query.redirect
 		let extra = {};
 		
 		if(token1) {
@@ -549,6 +617,197 @@ class Auth extends csystem{
 		})
 				
 	}
+	async twitter(req, res, next) {
+		let self = this
+		let [err, care, dontcare] = []
+		
+		let state = req.query.state || ''
+		let tmp = base64url.decode(state)
+		try{
+			tmp = JSON.parse(tmp)
+		}catch(error){
+			tmp = {}
+		}
+
+		// let returned = req.params.v2
+		// let redirecturl1;// = req.query.redirecturl || req.query.redirect || tmp.redirecturl || tmp.redirect 
+		// let token;// = req.query.token || tmp.token
+		// if(returned) {
+		// 	redirecturl1 = tmp.redirecturl || tmp.redirect 
+		// 	token = tmp.token
+		// } else {
+		// 	redirecturl1 = req.query.redirecturl || req.query.redirect
+		// 	token =  req.query.token
+		// }
+
+		let redirecturl1 = req.query.redirecturl || req.query.redirect
+		let token = req.query.token
+		let returned = req.params.v2
+
+
+		req.headers['content-type'] = 'application/json'
+		req.headers['authorization'] = `bearer ${token}`
+		;[err, care] = await to(self.isAuthenticated(res, req))
+
+		
+		let personuid;
+
+		let token1 = token
+		let extra = {};
+		
+		if(token1) {
+			extra.token = token1
+		}
+		if(redirecturl1) {
+			extra.redirecturl = redirecturl1
+		}
+		state = base64url.encode(JSON.stringify(extra))
+
+		let __promisifiedPassportAuthentication = async function () {
+		    return new Promise((resolve, reject) => {
+		        passport.authenticate('twitter', { session:false, state:state}, async (errinner, user, info) => {
+					if(errinner) return reject(errinner)
+					// if(returned) {
+						if(err) {
+							if(err.message === 'jwt expired' || err.message === 'invalid token') throw err 
+							;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailProfile({Email:user.emails[0].value.toLowerCase()}))
+							if(err) throw (err)
+							personuid = care.uid
+							if (care === null) { // create user
+								let password = entropy.string();
+								;[err, care] = await to (Familyfe.Person.beget({
+									Name:user.displayName || 'Some Anon User',
+									Gender: "Male",
+									Emailprofiles:{
+										Email:user.emails[0].value.toLowerCase(), 
+										Password:password,
+										Cpassword:password, 
+										IsActive:false,
+										},
+									Twitters:{
+										Email:user.emails[0].value.toLowerCase(), 
+										tuid:user.id,
+										IsActive:true,
+										ProfilePic: user.photos[0].value
+										},
+									IsActive:true,
+									Families: [1]
+								
+								}))
+								if(err) 
+									if (err.msg !== 'PRIMARY must be unique') 
+										return reject(err)
+								// maybe account already exists...
+							} else {
+								if(Object.keys(care).length === 0) {
+									let password = entropy.string();
+									;[err, care] = await to (Familyfe.Person.beget({
+										Name:user.displayName || 'Some Anon User',
+										Gender: "Male",
+										Emailprofiles:{
+											Email:user.emails[0].value.toLowerCase(), 
+											Password:password,
+											Cpassword:password, 
+											IsActive:false,
+											},
+										Twitters:{
+											Email:user.emails[0].value.toLowerCase(), 
+											tuid:user.id,
+											IsActive:true,
+											ProfilePic: user.photos[0].value
+											},
+										IsActive:true,
+										Families: [1]
+									
+									}))
+									if(err) throw(err)
+								}
+								let profile = {
+									Email:user.emails[0].value.toLowerCase(), 
+									tuid:user.id,
+									IsActive:true,
+									PersonUid:care.uid,
+									ProfilePic: user.photos[0].value
+								}
+								personuid = care.uid;
+								;[err, care] = await to (Familyfe.TwitterProfile.addProfile(profile))
+								if(err) 
+									if (err.msg !== 'PRIMARY must be unique') 
+										return reject(err)
+							}
+							
+
+						} else {
+							// user is logged in. Add profile to this user
+							personuid = care.uid
+							let profile = {
+								Email:user.emails[0].value.toLowerCase(), 
+								tuid:user.id,
+								IsActive:true,
+								PersonUid:care.uid,
+								ProfilePic: user.photos[0].value
+							}
+							;[err, care] = await to (Familyfe.TwitterProfile.addProfile(profile))
+							// console.log(care)
+							if(err) 
+								if (err.msg !== 'PRIMARY must be unique') 
+									return reject(err)
+						}
+
+						// create token for this user
+						// res.json(user)
+
+						;[err, care] =  await to (Familyfe.EmailProfile.whichPerson(personuid))
+						if(err)return reject(err)
+						let person = care
+						person = JSON.parse(JSON.stringify(person))
+						let token = passport.generateToken({id:person.uid});
+						person.token = token
+
+						// log login
+						;[err, care] = await to(Familyfe.TwitterProfile.whichTwitterProfile({Email: user.emails[0].value.toLowerCase()}))
+						self.LogloginAttempt(req, {Success: true, "PersonUid": person.uid, "TwitterTuid": care.gituid})
+
+
+						// state = req.query.state || ''
+						// let tmp = base64url.decode(state)
+						// // console.log(tmp)
+						// try{
+						// 	tmp = JSON.parse(tmp)
+						// }catch(error){
+						// 	tmp = {}
+						// }
+						// let redirectUrl = tmp.redirecturl
+						// if(redirectUrl) {
+						// 	(redirectUrl.indexOf('?') > -1)?redirectUrl += `&`: redirectUrl += `?`
+						// 	redirectUrl += `token=${token}`
+						// 	res.redirect(`${redirectUrl}`);
+						// }
+						// else res.json(person)
+						// try{
+						let redirectUrl = redirecturl1 
+						if(redirectUrl) {
+							(redirectUrl.indexOf('?') > -1)?redirectUrl += `&`: redirectUrl += `?`
+							redirectUrl += `token=${token}`
+							res.redirect(`${redirectUrl}`);
+						}
+						else res.json(person)
+					// }catch(error){console.log(error)}
+					
+					
+		        })(req, res, next) 
+
+		    })
+		}
+
+		return __promisifiedPassportAuthentication().catch((err)=>{
+			// console.log(err)
+			// return Promise.reject(err)
+			throw(err)
+
+		})
+				
+	}
 
 	
 	async getRq(req, res, next) {
@@ -568,6 +827,10 @@ class Auth extends csystem{
 				break;
 			case "facebook":
 				[err, care] = await to(self.facebook(req, res, next));
+				if(err) throw(err)
+				break;
+			case "twitter":
+				[err, care] = await to(self.twitter(req, res, next));
 				if(err) throw(err)
 				break;
 			case "token":
