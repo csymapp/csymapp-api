@@ -15,9 +15,6 @@ checktime=$((checktime * 60))
 
 
 git pull origin master
-build
-
-
 
 while :			#continuously check for internet
 do
