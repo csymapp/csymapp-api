@@ -1,12 +1,23 @@
 #!/bin/bash
 
+readConfig () {
+	set -a 
+	source .env
+	set +a 
+}
 
-checktime=60 #1 hour	 #time in minutes after which to check for new software
+readConfig
+
+checktime=$UPDATE_INTERVAL #1 hour	 #time in minutes after which to check for new updates
 
 #times in seconds
 checktime=$((checktime * 60))
 
+
 git pull origin master
+build
+
+
 
 while :			#continuously check for internet
 do
