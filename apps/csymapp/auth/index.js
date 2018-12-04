@@ -160,7 +160,7 @@ class Auth extends csystem{
 										Email:user.emails[0].value.toLowerCase(), 
 										gituid:user.id,
 										IsActive:true,
-										ProfilePic: user.photos[0].value
+										ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
 										},
 									IsActive:true,
 									Families: [1]
@@ -186,7 +186,7 @@ class Auth extends csystem{
 											Email:user.emails[0].value.toLowerCase(), 
 											gituid:user.id,
 											IsActive:true,
-											ProfilePic: user.photos[0].value
+											ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
 											},
 										IsActive:true,
 										Families: [1]
@@ -199,7 +199,7 @@ class Auth extends csystem{
 									gituid:user.id,
 									IsActive:true,
 									PersonUid:care.uid,
-									ProfilePic: user.photos[0].value
+									ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
 								}
 								personuid = care.uid;
 								;[err, care] = await to (Familyfe.GitProfile.addProfile(profile))
@@ -217,7 +217,7 @@ class Auth extends csystem{
 								gituid:user.id,
 								IsActive:true,
 								PersonUid:care.uid,
-								ProfilePic: user.photos[0].value
+								ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
 							}
 							;[err, care] = await to (Familyfe.GitProfile.addProfile(profile))
 							if(err) 
@@ -328,7 +328,7 @@ class Auth extends csystem{
 										Email:user.emails[0].value.toLowerCase(), 
 										fbuid:user.id,
 										IsActive:true,
-										ProfilePic: user.photod?user.photos[0].value : ''
+										ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
 										},
 									IsActive:true,
 									Families: [1]
@@ -354,7 +354,7 @@ class Auth extends csystem{
 											Email:user.emails[0].value.toLowerCase(), 
 											fbuid:user.id,
 											IsActive:true,
-											ProfilePic: user.photod?user.photos[0].value : ''
+											ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
 											},
 										IsActive:true,
 										Families: [1]
@@ -367,7 +367,7 @@ class Auth extends csystem{
 									fbuid:user.id,
 									IsActive:true,
 									PersonUid:care.uid,
-									ProfilePic: user.photod?user.photos[0].value : ''
+									ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
 								}
 								personuid = care.uid;
 								;[err, care] = await to (Familyfe.FbProfile.addProfile(profile))
@@ -385,7 +385,7 @@ class Auth extends csystem{
 								fbuid:user.id,
 								IsActive:true,
 								PersonUid:care.uid,
-								ProfilePic: user.photod?user.photos[0].value : ''
+								ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
 							}
 							;[err, care] = await to (Familyfe.FbProfile.addProfile(profile))
 							// console.log(care)
@@ -506,7 +506,7 @@ class Auth extends csystem{
 										Email:user.emails[0].value.toLowerCase(), 
 										gituid:user.id,
 										IsActive:true,
-										ProfilePic: user.photos[0].value
+										ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
 										},
 									IsActive:true,
 									Families: [1]
@@ -532,7 +532,7 @@ class Auth extends csystem{
 											Email:user.emails[0].value.toLowerCase(), 
 											guid:user.id,
 											IsActive:true,
-											ProfilePic: user.photos[0].value
+											ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
 											},
 										IsActive:true,
 										Families: [1]
@@ -545,7 +545,7 @@ class Auth extends csystem{
 									guid:user.id,
 									IsActive:true,
 									PersonUid:care.uid,
-									ProfilePic: user.photos[0].value
+									ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
 								}
 								personuid = care.uid;
 								;[err, care] = await to (Familyfe.GoogleProfile.addProfile(profile))
@@ -563,7 +563,7 @@ class Auth extends csystem{
 								guid:user.id,
 								IsActive:true,
 								PersonUid:care.uid,
-								ProfilePic: user.photos[0].value
+								ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
 							}
 							;[err, care] = await to (Familyfe.GoogleProfile.addProfile(profile))
 							// console.log(care)
@@ -584,7 +584,7 @@ class Auth extends csystem{
 
 						// log login
 						;[err, care] = await to(Familyfe.GoogleProfile.whichGoogleProfile({Email: user.emails[0].value.toLowerCase()}))
-						self.LogloginAttempt(req, {Success: true, "PersonUid": person.uid, "GithubGituid": care.gituid})
+						self.LogloginAttempt(req, {Success: true, "PersonUid": person.uid, "GithubGituid": care.guid})
 
 
 						state = req.query.state || ''
@@ -617,6 +617,189 @@ class Auth extends csystem{
 		})
 				
 	}
+
+	
+	async linkedin(req, res, next) {
+		let self = this
+		let [err, care, dontcare] = []
+		
+		let state = req.query.state || ''
+		let tmp = base64url.decode(state)
+		try{
+			tmp = JSON.parse(tmp)
+		}catch(error){
+			tmp = {}
+		}
+
+		let returned = req.params.v2
+		let redirecturl1;// = req.query.redirecturl || req.query.redirect || tmp.redirecturl || tmp.redirect 
+		let token;// = req.query.token || tmp.token
+		if(returned) {
+			redirecturl1 = tmp.redirecturl || tmp.redirect 
+			token = tmp.token
+		} else {
+			redirecturl1 = req.query.redirecturl || req.query.redirect
+			token =  req.query.token
+		}
+
+		req.headers['content-type'] = 'application/json'
+		req.headers['authorization'] = `bearer ${token}`
+		;[err, care] = await to(self.isAuthenticated(res, req))
+
+		
+		let personuid;
+
+		let token1 = token
+		let extra = {};
+		
+		if(token1) {
+			extra.token = token1
+		}
+		if(redirecturl1) {
+			extra.redirecturl = redirecturl1
+		}
+		state = base64url.encode(JSON.stringify(extra))
+
+		let __promisifiedPassportAuthentication = async function () {
+		    return new Promise((resolve, reject) => {
+		        passport.authenticate('linkedin', { session:false, state:state}, async (errinner, user, info) => {
+					if(errinner) return reject(errinner)
+					// if(returned) {
+						// let err = err1
+						if(err) {
+							if(err.message === 'jwt expired' || err.message === 'invalid token') throw err 
+							;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailProfile({Email:user.emails[0].value.toLowerCase()}))
+							if(err) throw (err)
+							personuid = care.uid
+							if (care === null) { // create user
+								let password = entropy.string();
+								;[err, care] = await to (Familyfe.Person.beget({
+									Name:user.displayName || 'Some Anon User',
+									Gender: "Male",
+									Emailprofiles:{
+										Email:user.emails[0].value.toLowerCase(), 
+										Password:password,
+										Cpassword:password, 
+										IsActive:false,
+										},
+									Linkedins:{
+										Email:user.emails[0].value.toLowerCase(), 
+										luid:user.id,
+										IsActive:true,
+										ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
+										},
+									IsActive:true,
+									Families: [1]
+								
+								}))
+								if(err) 
+									if (err.msg !== 'PRIMARY must be unique') 
+										return reject(err)
+								// maybe account already exists...
+							} else {
+								if(Object.keys(care).length === 0) {
+									let password = entropy.string();
+									;[err, care] = await to (Familyfe.Person.beget({
+										Name:user.displayName || 'Some Anon User',
+										Gender: "Male",
+										Emailprofiles:{
+											Email:user.emails[0].value.toLowerCase(), 
+											Password:password,
+											Cpassword:password, 
+											IsActive:false,
+											},
+											Linkedins:{
+											Email:user.emails[0].value.toLowerCase(), 
+											luid:user.id,
+											IsActive:true,
+											ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
+											},
+										IsActive:true,
+										Families: [1]
+									
+									}))
+									if(err) throw(err)
+								}
+								let profile = {
+									Email:user.emails[0].value.toLowerCase(), 
+									luid:user.id,
+									IsActive:true,
+									PersonUid:care.uid,
+									ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
+									//
+								}
+								personuid = care.uid;
+								;[err, care] = await to (Familyfe.LinkedinProfile.addProfile(profile))
+								if(err) 
+									if (err.msg !== 'PRIMARY must be unique') 
+										return reject(err)
+							}
+							
+
+						} else {
+							// user is logged in. Add profile to this user
+							personuid = care.uid
+							let profile = {
+								Email:user.emails[0].value.toLowerCase(), 
+								luid:user.id,
+								IsActive:true,
+								PersonUid:care.uid,
+								ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
+							}
+							;[err, care] = await to (Familyfe.LinkedinProfile.addProfile(profile))
+							// console.log(care)
+							if(err) 
+								if (err.msg !== 'PRIMARY must be unique') 
+									return reject(err)
+						}
+
+						// create token for this user
+						// res.json(user)
+
+						;[err, care] =  await to (Familyfe.EmailProfile.whichPerson(personuid))
+						if(err)return reject(err)
+						let person = care
+						person = JSON.parse(JSON.stringify(person))
+						let token = passport.generateToken({id:person.uid});
+						person.token = token
+
+						// log login
+						;[err, care] = await to(Familyfe.LinkedinProfile.whichLinkedinProfile({Email: user.emails[0].value.toLowerCase()}))
+						self.LogloginAttempt(req, {Success: true, "PersonUid": person.uid, "LinkedinLuid": care.luid})
+
+
+						state = req.query.state || ''
+						let tmp = base64url.decode(state)
+						// console.log(tmp)
+						try{
+							tmp = JSON.parse(tmp)
+						}catch(error){
+							tmp = {}
+						}
+						let redirectUrl = tmp.redirecturl
+						if(redirectUrl) {
+							(redirectUrl.indexOf('?') > -1)?redirectUrl += `&`: redirectUrl += `?`
+							redirectUrl += `token=${token}`
+							res.redirect(`${redirectUrl}`);
+						}
+						else res.json(person)
+					
+					
+		        })(req, res, next) 
+
+		    })
+		}
+
+		return __promisifiedPassportAuthentication().catch((err)=>{
+			// console.log(err)
+			// return Promise.reject(err)
+			throw(err)
+
+		})
+				
+	}
+
+
 	async twitter(req, res, next) {
 		let self = this
 		let [err, care, dontcare] = []
@@ -688,7 +871,7 @@ class Auth extends csystem{
 										Email:user.emails[0].value.toLowerCase(), 
 										tuid:user.id,
 										IsActive:true,
-										ProfilePic: user.photos[0].value
+										ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
 										},
 									IsActive:true,
 									Families: [1]
@@ -714,7 +897,7 @@ class Auth extends csystem{
 											Email:user.emails[0].value.toLowerCase(), 
 											tuid:user.id,
 											IsActive:true,
-											ProfilePic: user.photos[0].value
+											ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
 											},
 										IsActive:true,
 										Families: [1]
@@ -727,7 +910,7 @@ class Auth extends csystem{
 									tuid:user.id,
 									IsActive:true,
 									PersonUid:care.uid,
-									ProfilePic: user.photos[0].value
+									ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
 								}
 								personuid = care.uid;
 								;[err, care] = await to (Familyfe.TwitterProfile.addProfile(profile))
@@ -745,7 +928,7 @@ class Auth extends csystem{
 								tuid:user.id,
 								IsActive:true,
 								PersonUid:care.uid,
-								ProfilePic: user.photos[0].value
+								ProfilePic: user.photos? user.photos[0]?user.photos[0].value : '' :''
 							}
 							;[err, care] = await to (Familyfe.TwitterProfile.addProfile(profile))
 							// console.log(care)
@@ -766,7 +949,7 @@ class Auth extends csystem{
 
 						// log login
 						;[err, care] = await to(Familyfe.TwitterProfile.whichTwitterProfile({Email: user.emails[0].value.toLowerCase()}))
-						self.LogloginAttempt(req, {Success: true, "PersonUid": person.uid, "TwitterTuid": care.gituid})
+						self.LogloginAttempt(req, {Success: true, "PersonUid": person.uid, "TwitterTuid": care.tuid})
 
 
 						// state = req.query.state || ''
@@ -833,6 +1016,11 @@ class Auth extends csystem{
 				[err, care] = await to(self.twitter(req, res, next));
 				if(err) throw(err)
 				break;
+			case "linkedin":
+				[err, care] = await to(self.linkedin(req, res, next));
+				if(err) throw(err)
+				break;
+			
 			case "token":
 				[err, care] = await to(self.token(req, res, next));
 				if(err) throw(err)

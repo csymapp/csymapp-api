@@ -12,6 +12,7 @@ csystem = require(__dirname+"/../csystem").csystem,
 ,GithubProfile = require(__dirname+"/profiles/github")
 ,FacebookProfile = require(__dirname+"/profiles/facebook")
 ,TwitterProfile = require(__dirname+"/profiles/twitter")
+,LinkedinProfile = require(__dirname+"/profiles/linkedin")
 
 class csymapp extends csystem {
 
@@ -76,6 +77,11 @@ class csymapp extends csystem {
     async twitterprofile(req, res, next) {
         let [err, care] = [];
         ;[err, care] = await to(TwitterProfile.main(req, res, next));
+        if(err) throw (err)
+    }
+    async linkedinprofile(req, res, next) {
+        let [err, care] = [];
+        ;[err, care] = await to(LinkedinProfile.main(req, res, next));
         if(err) throw (err)
     }
 

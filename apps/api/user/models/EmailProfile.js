@@ -9,10 +9,10 @@ async function hashPassword(user, options){
 	}
 
 	if(!user.Cpassword)
-		return Promise.reject({code:1002, msg:"Please confirm your password"});
+		return Promise.reject({code:1002, msg:JSON.stringify({Cpassword:"Please confirm your password"})});
 	if(user.Cpassword)
 		if(user.Password !== user.Cpassword)
-			return Promise.reject({code:1002, msg:"Passwords don't match"});
+			return Promise.reject({code:1002, msg:JSON.stringify({Password:"Passwords don't match"})});
 	return bcrypt.genSaltAsync(SALT_FACTOR)
 		.then((salt)=>bcrypt.hashAsync(user.dataValues.Password,salt, null))
 		.then(hash=>{
@@ -42,13 +42,16 @@ module.exports = (sequelize, DataTypes) => {
                 },
                 isUnique: function (value, next) {
                     var self = this;
-                    Emailprofile.find({where: {email: value}})
+                    Emailprofile.find({where: {Email: value}})
                         .then(function (user) {
                             // reject if a different user wants to use the same email
-                            if (user && self.uid !== user.uid) {
-                                return next('Email already in use');
-                            }
-                            return next();
+                            // if (user && self.uid !== user.uid) {
+                            //     return next('Email already in use');
+                            // }else
+							// 	return next();
+							if(user)
+								return next(JSON.stringify({Email:'Email already in use'}));
+							else return next();
                         })
                         .catch(function (err) {
                             return next(err);
