@@ -102,6 +102,7 @@ const config = {
         google:'/csymapp/auth/google/callback',
         twitter:'/csymapp/auth/twitter/callback',
         github:'csymapp/auth/github/callback',
+        linkedin:'csymapp/auth/linkedin/callback',
     }
 };
 
