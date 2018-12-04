@@ -42,6 +42,7 @@ else
 
 app.set('port', process.env.PORT || 3000);
 app.set('superSecret', process.env.JWT_SECRET); // secret variable
+app.set('env', process.env.ENV); 
 
 app.use(session({
 	resave: true,
