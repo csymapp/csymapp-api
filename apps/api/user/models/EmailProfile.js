@@ -102,6 +102,12 @@ module.exports = (sequelize, DataTypes) => {
 	      foreignKey: {
 	        allowNull: true
 			}
+		});
+		Emailprofile.hasMany(models.EmailCode, {
+	    	onDelete: "CASCADE",
+	      foreignKey: {
+	        allowNull: true
+			}
 	    });
 	}
 	

@@ -5,6 +5,7 @@ const to = require('await-to-js').to
 ,{sequelize} = require(__dirname+"/../../csystem").models
 ,Familyfe = require(__dirname+'/../../../modules/node-familyfe')(sequelize)
 ,moment = require('moment')
+,isphone = require('phone');
 
 class User extends csystem{
 
@@ -18,25 +19,52 @@ class User extends csystem{
 		let [err, care] = []
 
 		let isLogged ;
-		let body = req.body
+		let body = JSON.parse(JSON.stringify(req.body))
+
+		if(!body.profile)
+			body.profile = 'Email'
+		body.email = body.email || ''
+		body.phone = body.phone || ''
+		body.pin = body.pin || ''
+		body.phone = isphone(body.phone)[0]
+		// body.Cpin = body.Cpin || ''
+		// body.phone = body.phone || ''
+
+		body.profile = body.profile.toLowerCase()
 
 		;[err, care] = await to(self.isAuthenticated(res, req))
 		
 		if(err)  {
-			console.log('err')
 			if(err.message === 'jwt expired' || err.message === 'invalid token') throw err
-			;[err, care] = await to (Familyfe.Person.beget({
-				Name: body.Name || "Anonymous User", 
-				Gender: body.Gender || "Male",
-				Emailprofiles:{
-					Email:body.email.toLowerCase() || '', 
-					Password:body.password, 
-					Cpassword:body.cpassword, 
+			body.phone = isphone(body.phone)[0]
+			// if phone
+			if(body.profile === 'phone')
+				[err, care] = await to (Familyfe.Person.beget({
+					Name: body.Name || "Anonymous User", 
+					Gender: body.Gender || "Male",
+					Telephones:{
+						Telephone:body.phone, 
+						Pin:body.pin, 
+						Cpin:body.cpin,
+						IsActive:true,
+						},
 					IsActive:true,
-					},
-				IsActive:true,
-				Families: [1]
-			}))
+					Families: [1]
+				}))
+			// if email=> default
+			else
+				[err, care] = await to (Familyfe.Person.beget({
+					Name: body.Name || "Anonymous User", 
+					Gender: body.Gender || "Male",
+					Emailprofiles:{
+						Email:body.email.toLowerCase() || '', 
+						Password:body.password, 
+						Cpassword:body.cpassword, 
+						IsActive:true,
+						},
+					IsActive:true,
+					Families: [1]
+				}))
 			if(err) throw err
 			let useruid = care.uid;
 			console.log('creating Roles in World for new user');
@@ -78,8 +106,6 @@ class User extends csystem{
 			if(err) throw (err)
 			res.json(care)
 		} else { // user is logged in
-			// console.log(req.params)
-			// console.log(care)
 			let myuid = care.uid 
 			let addtoUser = req.params.v1
 			if (addtoUser !== myuid) {
@@ -88,13 +114,24 @@ class User extends csystem{
 			if(addtoUser) {
 				// this user has to be yourself,,, unless of course you are an admin in csystem family...
 				// 
-				;[err, care] = await to (Familyfe.EmailProfile.addProfile({
-					Email:body.email.toLowerCase() || '', 
-					Password:body.password, 
-					Cpassword:body.cpassword, 
-					IsActive:true,
-					PersonUid: myuid
-				}))
+				// if phone
+				if(body.profile === 'phone')
+					[err, care] = await to (Familyfe.TelephoneProfile.addProfile({
+						Telephone:body.phone, 
+						Pin:body.pin, 
+						Cpin:body.cpin,
+						IsActive:true,
+						PersonUid: myuid
+					}))
+				// if email=> default
+				else
+					[err, care] = await to (Familyfe.EmailProfile.addProfile({
+						Email:body.email.toLowerCase() || '', 
+						Password:body.password, 
+						Cpassword:body.cpassword, 
+						IsActive:true,
+						PersonUid: myuid
+					}))
 				if(err)throw err
 				;[err, care] = await to (Familyfe.EmailProfile.whichPerson(myuid))
 				if(err) throw (err)

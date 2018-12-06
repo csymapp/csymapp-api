@@ -18,6 +18,9 @@ const Bcrypt = require('bcrypt');
 const to = require('await-to-js').to;
 const randomstring = require('randomstring');
 const async = require('async')
+,moment = require('moment')
+,config = require(__dirname+'/../../config/config.system')
+,isphone = require('phone');
 // const {ObjectId} = require('mongodb');
 // const safeObjectId = s => ObjectId.isValid(s) ? new ObjectId(s) : null;
 
@@ -320,6 +323,7 @@ class Person extends abstractPerson
 			{model: self.sequelize.models.Github},
 			{model: self.sequelize.models.Google},
 			{model: self.sequelize.models.Facebook},
+			{model:self.sequelize.models.Telephone},
 			{model:self.sequelize.models.Twitter}
 		]
 		self.Family = new Family(sequelize)
@@ -420,6 +424,7 @@ class Person extends abstractPerson
 			 	 			{model:self.sequelize.models.Google},
 			 	 			{model:self.sequelize.models.Facebook},
 							{model:self.sequelize.models.Emailprofile},
+							{model:self.sequelize.models.Telephone},
 							{model:self.sequelize.models.Twitter}
 			 	 		]
         }
@@ -516,12 +521,16 @@ class Person extends abstractPerson
 					model: self.sequelize.models.Emailprofile
 				},
 				{
+					model: self.sequelize.models.Telephone
+				},
+				{
 					model: self.sequelize.models.Github
 				}
 		]
 		}))
 
 		if(err) {
+			console.log(err)
 			let {a} = err.message || err.msg
 			return Promise.reject({msg:err.msg||err.errors[0].message||err.message||err, code:err.code||422, status:422})
 		}
@@ -994,6 +1003,7 @@ class World extends abstractWorld
  	 			{model:self.sequelize.models.Google},
  	 			{model:self.sequelize.models.Facebook},
 				{model:self.sequelize.models.Emailprofile},
+				{model:self.sequelize.models.Telephone},
 				{model:self.sequelize.models.Twitter}
  	 		]
 		}))//or user .id
@@ -1104,6 +1114,7 @@ class EmailProfile
 					{model:self.sequelize.models.Facebook},
 					{model:self.sequelize.models.Twitter},
 					{model:self.sequelize.models.Linkedin},
+					{model:self.sequelize.models.Telephone},
 					{
 						model:self.sequelize.models.Emailprofile,
 						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
@@ -1150,6 +1161,7 @@ class EmailProfile
 					{model:self.sequelize.models.Facebook},
 					{model:self.sequelize.models.Twitter},
 					{model:self.sequelize.models.Linkedin},
+					{model:self.sequelize.models.Telephone},
 					{
 						model:self.sequelize.models.Emailprofile,
 						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic'],
@@ -1167,6 +1179,195 @@ class EmailProfile
 		let self = this;
 		let [err, care] = []
 		;[err, care] = await to(self.sequelize.models.Emailprofile.create(profile))
+
+		if(err) {
+			let {a} = err.message || err.msg
+			return Promise.reject({msg:err.msg||err.errors[0].message||err.message||err, code:err.code||422, status:422})
+		}
+		return care;
+	}
+}
+
+class TelephoneProfile 
+{
+	constructor(sequelize)
+	{
+		// super();
+		let self = this;
+		self.sequelize = sequelize;
+		// self.People = self.Person = new Person(sequelize);
+		// self.Families = self.Family = new family;
+		// self.FamilyMembers = self.familyMembers = new familyMembers;
+	}
+	
+	async whichTelephoneProfile(profile) {
+		
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Telephone.findOne({where:profile,
+			include: [
+				{
+					model:self.sequelize.models.TelephoneCode
+				}
+			]
+		}))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care
+	}
+
+	async createTelephoneCode(data){
+		let self = this
+		await self.removeOldCodes();
+		data.Telephone = isphone(data.Telephone)[0]
+		let [err, care] = await to(self.sequelize.models.TelephoneCode.create(data));
+		if(err) throw (err)
+		if(care === null) return {}
+		return care
+	}
+
+	
+	async removeOldCodes(){
+		let self = this
+		, select = {};
+
+		select['createdAt'] ={lte:moment().subtract(config.get('/CodeTTL'), 'minutes').toDate()}
+		console.log(select)
+		let [err, care] = await to(self.sequelize.models.TelephoneCode.destroy({where:select}));
+		if(err) throw (err)
+		if(care === null) return {}
+		return care
+	}
+
+	
+	async deleteCode(Code){
+		let self = this
+		let [err, care] = await to(self.sequelize.models.TelephoneCode.destroy({where:{Code}}));
+		if(err) throw (err)
+		if(care === null) return {}
+		return care
+	}
+
+	async whichPersonwithTelephoneProfile(profile) {
+		
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Person.findOne(
+			{
+				
+				include: [
+					{
+						model:self.sequelize.models.Telephone,
+						where:profile
+					}
+				]
+			}
+		))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care
+	}
+
+	
+	async whichTelephoneProfilewithCode(profile, code) {
+		
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Telephone.findOne(
+			{
+				where:profile,
+				include: [
+					{
+						model:self.sequelize.models.TelephoneCode,
+						where:{Code:code}
+					}
+				]
+			}
+		))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care
+	}
+
+
+
+	async whichPerson(uid, moreAttributes) {
+		let self = this
+		let attributes = {
+			person: ['uid','Name', 'Gender', 'IsActive']
+		}
+		let [err, care] = await to(self.sequelize.models.Person.findOne({
+			where:{uid},
+			attributes:attributes.person,
+			include: 
+				[
+					{model:self.sequelize.models.Github},
+					{model:self.sequelize.models.Google},
+					{model:self.sequelize.models.Facebook},
+					{model:self.sequelize.models.Twitter},
+					{model:self.sequelize.models.Linkedin},
+					{model:self.sequelize.models.Emailprofile},
+					{
+						model:self.sequelize.models.Telephone,
+						attributes: ['Telephone', 'IsActive', 'puid', 'ProfilePic']
+					}
+				]
+			}
+		))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+
+	async update(data, where) {
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Telephone.update(data, {where: where, individualHooks: true}))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	
+	async delete(where) {
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Telephone.destroy({where}))		
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+
+
+	async whichPersonwithTelephoneid(Telephoneid, moreAttributes) {
+		let self = this
+		let attributes = {
+			person: ['uid','Name', 'Gender', 'IsActive']
+		}
+		let [err, care] = await to(self.sequelize.models.Person.findOne({
+			attributes:attributes.person,
+			include: 
+				[
+					{model:self.sequelize.models.Github},
+					{model:self.sequelize.models.Google},
+					{model:self.sequelize.models.Facebook},
+					{model:self.sequelize.models.Twitter},
+					{model:self.sequelize.models.Linkedin},
+					{model:self.sequelize.models.Emailprofile},
+					{
+						model:self.sequelize.models.Telephone,
+						attributes: ['Telephone', 'IsActive', 'puid', 'ProfilePic'],
+						where: {puid: Telephoneid}
+					}
+				]
+			}
+		))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care.dataValues
+	}
+
+	async addProfile(profile) {
+		let self = this;
+		let [err, care] = []
+		;[err, care] = await to(self.sequelize.models.Telephone.create(profile))
 
 		if(err) {
 			let {a} = err.message || err.msg
@@ -1213,6 +1414,7 @@ class GitProfile
 					{model:self.sequelize.models.Facebook},
 					{model:self.sequelize.models.Twitter},
 					{model:self.sequelize.models.Linkedin},
+					{model:self.sequelize.models.Telephone},
 					{
 						model:self.sequelize.models.Emailprofile,
 						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
@@ -1252,6 +1454,7 @@ class GitProfile
 					{model:self.sequelize.models.Facebook},
 					{model:self.sequelize.models.Twitter},
 					{model:self.sequelize.models.Linkedin},
+					{model:self.sequelize.models.Telephone},
 					{
 						model:self.sequelize.models.Github,
 						attributes: ['Name', 'Email', 'IsActive', 'ProfilePic', 'gituid'],
@@ -1319,6 +1522,7 @@ class GoogleProfile
 					{model:self.sequelize.models.Google},
 					{model:self.sequelize.models.Facebook},
 					{model:self.sequelize.models.Twitter},
+					{model:self.sequelize.models.Telephone},
 					{model:self.sequelize.models.Linkedin},
 					{
 						model:self.sequelize.models.Emailprofile,
@@ -1345,6 +1549,7 @@ class GoogleProfile
 					{model:self.sequelize.models.Emailprofile},
 					{model:self.sequelize.models.Facebook},
 					{model:self.sequelize.models.Twitter},
+					{model:self.sequelize.models.Telephone},
 					{model:self.sequelize.models.Linkedin},
 					{
 						model:self.sequelize.models.Google,
@@ -1425,6 +1630,7 @@ class TwitterProfile
 					{model:self.sequelize.models.Google},
 					{model:self.sequelize.models.Facebook},
 					{model:self.sequelize.models.Twitter},
+					{model:self.sequelize.models.Telephone},
 					{model:self.sequelize.models.Linkedin},
 					{
 						model:self.sequelize.models.Emailprofile,
@@ -1451,6 +1657,7 @@ class TwitterProfile
 					{model:self.sequelize.models.Emailprofile},
 					{model:self.sequelize.models.Facebook},
 					{model:self.sequelize.models.Google},
+					{model:self.sequelize.models.Telephone},
 					{model:self.sequelize.models.Linkedin},
 					{
 						model:self.sequelize.models.Twitter,
@@ -1531,6 +1738,7 @@ class FbProfile
 					{model:self.sequelize.models.Google},
 					{model:self.sequelize.models.Facebook},
 					{model:self.sequelize.models.Twitter},
+					{model:self.sequelize.models.Telephone},
 					{model:self.sequelize.models.Linkedin},
 					{
 						model:self.sequelize.models.Emailprofile,
@@ -1557,6 +1765,7 @@ class FbProfile
 					{model:self.sequelize.models.Emailprofile},
 					{model:self.sequelize.models.Google},
 					{model:self.sequelize.models.Twitter},
+					{model:self.sequelize.models.Telephone},
 					{model:self.sequelize.models.Linkedin},
 					{
 						model:self.sequelize.models.Facebook,
@@ -1638,6 +1847,7 @@ class LinkedinProfile
 					{model:self.sequelize.models.Google},
 					{model:self.sequelize.models.Facebook},
 					{model:self.sequelize.models.Twitter},
+					{model:self.sequelize.models.Telephone},
 					{model:self.sequelize.models.Linkedin},
 					{
 						model:self.sequelize.models.Emailprofile,
@@ -1664,6 +1874,7 @@ class LinkedinProfile
 					{model:self.sequelize.models.Emailprofile},
 					{model:self.sequelize.models.Google},
 					{model:self.sequelize.models.Twitter},
+					{model:self.sequelize.models.Telephone},
 					{model:self.sequelize.models.Facebook},
 					{
 						model:self.sequelize.models.Linkedin,
@@ -1721,6 +1932,7 @@ module.exports = (sequelize) => {
 	module.Profile =  new Profile(sequelize)
 	module.apps = new appsConfig(sequelize);
 	module.EmailProfile = new EmailProfile(sequelize);
+	module.TelephoneProfile = new TelephoneProfile(sequelize);
 	module.GitProfile = new GitProfile(sequelize);
 	module.FbProfile = new FbProfile(sequelize);
 	module.GoogleProfile = new GoogleProfile(sequelize);

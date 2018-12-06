@@ -103,7 +103,8 @@ const config = {
         twitter:'/csymapp/auth/twitter/callback',
         github:'csymapp/auth/github/callback',
         linkedin:'csymapp/auth/linkedin/callback',
-    }
+    },
+    CodeTTL: 5 //minutes
 };
 
 
