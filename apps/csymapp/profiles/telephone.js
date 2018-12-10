@@ -23,20 +23,20 @@ class Profile extends csystem{
 		body.Code = body.code || body.Code
 		body.code = body.Code
 		let [err, care] = []
-		;[err, care] = await to(self.isAuthenticated(res, req))
-		if(err) throw err;
-		let authuid = care.uid
-		;[err, care] = await to (Familyfe.TelephoneProfile.whichPersonwithTelephoneProfile({puid:phoneid}))
-		if(care === null) throw ({ status:422, message:"can't set for another user"})
-		let uidtoMod = care.uid;
-		if(authuid !== uidtoMod)throw ({ status:422, message:"can't set for another user"})
+		// ;[err, care] = await to(self.isAuthenticated(res, req))
+		// if(err) throw err;
+		// let authuid = care.uid
+		// ;[err, care] = await to (Familyfe.TelephoneProfile.whichPersonwithTelephoneProfile({puid:phoneid}))
+		// if(care === null) throw ({ status:422, message:"can't set for another user"})
+		// let uidtoMod = care.uid;
+		// if(authuid !== uidtoMod)throw ({ status:422, message:"can't set for another user"})
 
-		if (authuid !== uidtoMod) {
-			throw ({ status:422, message:"can't set for another user"})
-		}
+		// if (authuid !== uidtoMod) {
+		// 	throw ({ status:422, message:"can't set for another user"})
+		// }
 
 		let data;
-		console.log(body)
+		// console.log(body)
 		if(body.IsActive === true) {
 			;[err, care] = await to (Familyfe.TelephoneProfile.whichTelephoneProfilewithCode({puid:phoneid},body.Code))
 			if(care === null || !Object.keys(care).length) throw ({ status:422, message:JSON.stringify({Code:"Wrong Code"})})
@@ -85,9 +85,6 @@ class Profile extends csystem{
 		phone = isphone(phone)
 		
 		let [err, care] = []
-		// ;[err, care] = await to(self.isAuthenticated(res, req))
-		// if(err) throw err;
-        // let authuid = care.uid
         ;[err, care] = await to (Familyfe.TelephoneProfile.whichTelephoneProfile({Telephone:phone}))
         if(err) throw err;
         if(care === null) throw ({ status:422, message:"User does not exist"})
@@ -100,9 +97,7 @@ class Profile extends csystem{
         ;[err, care] = await to (Familyfe.TelephoneProfile.createTelephoneCode({TelephonePuid:puid, Code}))
         if(err) throw err;
         
-		// 
 		return {puid}
-        // res.json({puid})
 	}
 	
 	

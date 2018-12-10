@@ -4,14 +4,17 @@ const to = require('await-to-js').to
 ,csystem = require(__dirname+"/../../csystem").csystem
 ,{sequelize} = require(__dirname+"/../../csystem").models
 ,Familyfe = require(__dirname+'/../../../modules/node-familyfe')(sequelize)
+,config = require(__dirname+'/../../../config/config.system')
 ,moment = require('moment')
-,isphone = require('phone');
+,isphone = require('phone')
+, { Entropy, charset8 } = require('entropy-string')
+, entropy = new Entropy({ total: 1e6, risk: 1e9 })
 
 class User extends csystem{
 
 	constructor() {
 		super()
-    }
+	}
     
     async createNew(req, res) {
 		let self = this;
@@ -52,7 +55,7 @@ class User extends csystem{
 					Families: [1]
 				}))
 			// if email=> default
-			else
+			else {
 				[err, care] = await to (Familyfe.Person.beget({
 					Name: body.Name || "Anonymous User", 
 					Gender: body.Gender || "Male",
@@ -60,11 +63,22 @@ class User extends csystem{
 						Email:body.email.toLowerCase() || '', 
 						Password:body.password, 
 						Cpassword:body.cpassword, 
-						IsActive:true,
+						IsActive:false,
 						},
 					IsActive:true,
 					Families: [1]
 				}))
+				if(err) throw err
+				entropy.use(charset8)
+				let Code = entropy.string().substring(0, 8);
+				let [err1, care1] = await to (Familyfe.EmailProfile.whichEmailProfile({Email:body.email.toLowerCase() || ''}))
+				if(err1) throw err1;
+				let euid = care1.emailuid
+				, activationPath = config.get('/APPROOT') + '/csymapp/emailprofile/' + Code 
+				, redirect = req.query.redirecturl || req.query.redirect || req.connection.remoteAddress || req.socket.remoteAddress || req.connection.socket.remoteAddress
+				activationPath += '?redirect=' + redirect
+				;[err1, care1] = await to ( Familyfe.EmailProfile.emailActivation({Code,EmailprofileEmailuid:euid}, body.email.toLowerCase() || '', activationPath))
+			}
 			if(err) throw err
 			let useruid = care.uid;
 			console.log('creating Roles in World for new user');

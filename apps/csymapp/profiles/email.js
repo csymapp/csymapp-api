@@ -4,7 +4,10 @@ const to = require('await-to-js').to
 ,csystem = require(__dirname+"/../../csystem").csystem
 ,{sequelize} = require(__dirname+"/../../csystem").models
 ,Familyfe = require(__dirname+'/../../../modules/node-familyfe')(sequelize)
+,config = require(__dirname+'/../../../config/config.system')
 ,moment = require('moment')
+, { Entropy, charset8 } = require('entropy-string')
+, entropy = new Entropy({ total: 1e6, risk: 1e9 })
 
 class Profile extends csystem{
 
@@ -66,6 +69,48 @@ class Profile extends csystem{
 		res.json(care)
     }
 
+	
+    async getEmailProfile(req, res) {
+	// 	// either for generating Code or activating 
+		let code = req.params.v1
+		let [err, care] = [];
+	// 	// data = JSON.parse(JSON.stringify(req.body))
+		if(code) {
+			;[err, care] = await to (Familyfe.EmailProfile.whichEmailProfileforCode(code))
+			if(err) throw (err)
+			let emailid = care.	emailuid
+			let data = {
+				IsActive: true,
+			}
+			;[err, care] = await to (Familyfe.EmailProfile.update(data, {emailuid:emailid}));
+			await to (Familyfe.EmailProfile.deleteCode(code))
+			if(req.query.redirect) {
+				res.redirect(`${req.query.redirect}`);
+			} else {
+				res.send("activated. But we don't know where to redirect you to...")
+			}
+		} else {
+			let emailid = req.body.emailid
+		
+			entropy.use(charset8)
+			let Code = entropy.string().substring(0, 8);
+			;[err, care] = await to (Familyfe.EmailProfile.whichEmailProfile({emailuid:emailid}))
+			if(err) throw err;
+			if(care === null) throw ({ status:422, message:"User does not exist"})
+			let euid = care.emailuid
+			, Email = care.Email
+			, activationPath = config.get('/APPROOT') + '/csymapp/emailprofile/' + Code 
+			, redirect = req.query.redirecturl || req.query.redirect || req.connection.remoteAddress || req.socket.remoteAddress || req.connection.socket.remoteAddress
+			activationPath += '?redirect=' + redirect
+			;[err, care] = await to ( Familyfe.EmailProfile.emailActivation({Code,EmailprofileEmailuid:euid}, Email, activationPath))
+		
+
+			
+			return {euid}
+		}
+    }
+
+	
 
 
     async main(req, res){
@@ -84,6 +129,13 @@ class Profile extends csystem{
 				if (err) throw err
 				res.json(care)	
 				break;
+			
+			case 'GET':
+				;[err, care] = await to(self.getEmailProfile(req, res));
+				if (err) throw err
+				res.json(care)	
+				break;
+			
 			
 			default:
 				res.send('still building this sections');

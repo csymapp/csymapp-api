@@ -20,7 +20,8 @@ const randomstring = require('randomstring');
 const async = require('async')
 ,moment = require('moment')
 ,config = require(__dirname+'/../../config/config.system')
-,isphone = require('phone');
+,isphone = require('phone')
+, mailer = require(__dirname+'/../../apps/csystem/mailer')
 // const {ObjectId} = require('mongodb');
 // const safeObjectId = s => ObjectId.isValid(s) ? new ObjectId(s) : null;
 
@@ -892,7 +893,7 @@ class Family extends abstractFamily
 
 
 		if(err) throw (err);
-		if(care === null) throw err ("nothing found")
+		if(care === null) throw ("nothing found")
 		
 		return care.dataValues.FamilyMemberId
 	}
@@ -1070,11 +1071,77 @@ class EmailProfile
 		// self.Families = self.Family = new family;
 		// self.FamilyMembers = self.familyMembers = new familyMembers;
 	}
+
+	async emailActivation (code, toEmail, activationpath) {
+		let self = this
+		let {Code, EmailprofileEmailuid} = code,
+		data = code;
+		await self.createEmailCode(data)
+
+		let [err, care] = [];
+		;[err, care] = await to(mailer(
+			{
+				from: config.get('/mail/accountsman'),
+				to: toEmail
+			},
+			{
+				subject: 'Account Activation',
+				content: `Please use this code: <b>${Code}</b> to activate your account. Or click on <a href=${activationpath}>this link</a> to active`,
+			}
+			)
+		)
+		if(err) throw (err)
+		return care
+	}
+
+	async createEmailCode(data){
+		let self = this
+		// await self.removeOldCodes();
+		let [err, care] = await to(self.sequelize.models.EmailCode.create(data));
+		if(err) throw (err)
+		if(care === null) return {}
+		return care
+	}
+
+	async deleteCode(Code){
+		let self = this
+		let [err, care] = await to(self.sequelize.models.EmailCode.destroy({where:{Code}}));
+		if(err) throw (err)
+		if(care === null) return {}
+		return care
+	}
+
+	async removeOldCodes(){
+		let self = this
+		, select = {};
+
+		select['createdAt'] ={lte:moment().subtract(config.get('/CodeTTL'), 'minutes').toDate()}
+		let [err, care] = await to(self.sequelize.models.EmailCode.destroy({where:select}));
+		if(err) throw (err)
+		if(care === null) return {}
+		return care
+	}
 	
 	async whichEmailProfile(profile) {
 		
 		let self = this
 		let [err, care] = await to(self.sequelize.models.Emailprofile.findOne({where:profile}))
+		if(err) throw (err)
+		if(care === null) return {}
+		return care
+	}
+
+	async whichEmailProfileforCode(code) {
+		
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Emailprofile.findOne({
+			include: [
+				{
+					model:self.sequelize.models.EmailCode,
+					where:{Code: code}
+				}
+			]
+		}))
 		if(err) throw (err)
 		if(care === null) return {}
 		return care
@@ -1215,6 +1282,7 @@ class TelephoneProfile
 		return care
 	}
 
+
 	async createTelephoneCode(data){
 		let self = this
 		await self.removeOldCodes();
@@ -1231,7 +1299,7 @@ class TelephoneProfile
 		, select = {};
 
 		select['createdAt'] ={lte:moment().subtract(config.get('/CodeTTL'), 'minutes').toDate()}
-		console.log(select)
+		// console.log(select)
 		let [err, care] = await to(self.sequelize.models.TelephoneCode.destroy({where:select}));
 		if(err) throw (err)
 		if(care === null) return {}

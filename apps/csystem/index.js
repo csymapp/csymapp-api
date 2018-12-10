@@ -10,3 +10,4 @@ module.exports.csErrors = csErrors;
 module.exports.globalConfig = globalConfig;
 module.exports.passportConfig = passportConfig;
 module.exports.router = require(__dirname+'/router');
+module.exports.mailer = require(__dirname+'/mailer');
