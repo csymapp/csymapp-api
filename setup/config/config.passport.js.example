@@ -70,7 +70,7 @@ passport.use( new EmailStrategy({ usernameField: 'email' }, async (email, passwo
       , activationPath = config.get('/APPROOT') + '/csymapp/emailprofile/' + Code 
       , redirect = ''
       ;[err, care] = await to ( Familyfe.EmailProfile.emailActivation({Code,EmailprofileEmailuid:euid}, Email, activationPath))
-      return done({ message: JSON.stringify({Email:`Email ${email} is not active. Please activate using code which has been sent to your email address. You may need to check your spam folder.`}), status:422});
+      return done({ message: JSON.stringify({Email:`Please check your inbox/spam folder to activate this email first.`}), status:422});
   }
   [err, care] = await to(user.comparePass(password))
   if(err) return done(err)
