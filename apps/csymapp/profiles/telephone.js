@@ -145,6 +145,9 @@ class Profile extends csystem{
 			if(Object.keys(care).length === 0) throw ({ status:422, message:"User does not exist"})
 			let puid = care.puid;
 
+			console.log(care)
+			if(puid === null)throw ({ status:422, message:"User does not exist"})
+
 			entropy.use(charset8)
 			let Code = entropy.string().substring(0, 6);
 
