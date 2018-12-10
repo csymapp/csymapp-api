@@ -88,7 +88,7 @@ class Profile extends csystem{
         ;[err, care] = await to (Familyfe.TelephoneProfile.whichTelephoneProfile({Telephone:phone}))
         if(err) throw err;
         if(care === null) throw ({ status:422, message:"User does not exist"})
-        // if(Object.keys(care).length === 0) throw ({ status:422, message:"User does not exist"})
+        if(Object.keys(care).length === 0) throw ({ status:422, message:"User does not exist"})
         let puid = care.puid;
 
         entropy.use(charset8)
@@ -144,9 +144,6 @@ class Profile extends csystem{
 			if(care === null) throw ({ status:422, message:"User does not exist"})
 			if(Object.keys(care).length === 0) throw ({ status:422, message:"User does not exist"})
 			let puid = care.puid;
-
-			console.log(care)
-			if(puid === null)throw ({ status:422, message:"User does not exist"})
 
 			entropy.use(charset8)
 			let Code = entropy.string().substring(0, 6);
