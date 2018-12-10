@@ -41,7 +41,7 @@ class User extends csystem{
 			if(err.message === 'jwt expired' || err.message === 'invalid token') throw err
 			body.phone = isphone(body.phone)[0]
 			// if phone
-			if(body.profile === 'phone')
+			if(body.profile === 'phone') {
 				[err, care] = await to (Familyfe.Person.beget({
 					Name: body.Name || "Anonymous User", 
 					Gender: body.Gender || "Male",
@@ -49,13 +49,23 @@ class User extends csystem{
 						Telephone:body.phone, 
 						Pin:body.pin, 
 						Cpin:body.cpin,
-						IsActive:true,
+						IsActive:false,
 						},
 					IsActive:true,
 					Families: [1]
 				}))
+				if(err) throw (err)
+
+				let [err1, care1] = await to (Familyfe.TelephoneProfile.whichTelephoneProfile({Telephone:body.phone}))
+				if(err1) throw err1;
+				if(care1 === null) throw ({ status:422, message:"User does not exist"})
+				let puid = care1.puid;
+				entropy.use(charset8)
+				let Code = entropy.string().substring(0, 6);
+				;[err1, care1] = await to (Familyfe.TelephoneProfile.createTelephoneCode({TelephonePuid:puid, Code}))
+				if(err1) throw err1;
 			// if email=> default
-			else {
+			} else {
 				[err, care] = await to (Familyfe.Person.beget({
 					Name: body.Name || "Anonymous User", 
 					Gender: body.Gender || "Male",
