@@ -9,7 +9,6 @@ readConfig () {
 readConfig
 
 checktime=$UPDATE_INTERVAL #1 hour       #time in minutes after which to check for new updates
-
 #times in seconds
 checktime=$((checktime * 60))
 
