@@ -120,7 +120,12 @@ class Profile extends csystem{
 			if(care === false) throw { message: JSON.stringify({Pin:'Wrong pin.'})}
 
 			;[err, care] = await to (Familyfe.TelephoneProfile.whichTelephoneProfile({Telephone:body.phone}))
-			if(!care.IsActive)throw { message: JSON.stringify({Phone:'Phone Number is deactivated. Please activate.'})}
+
+			if(!care.IsActive) {
+				// activate
+				await to (Familyfe.TelephoneProfile.update({IsActive:true}, {Telephone:body.phone}))
+				// throw { message: JSON.stringify({Phone:'Phone Number is deactivated. Please activate.'})}
+			}
 			;[err, care] =  await to (Familyfe.EmailProfile.whichPerson(care.PersonUid))
 			let person = care
 			person = JSON.parse(JSON.stringify(person))
