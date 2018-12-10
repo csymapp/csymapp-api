@@ -104,7 +104,14 @@ const config = {
         github:'csymapp/auth/github/callback',
         linkedin:'csymapp/auth/linkedin/callback',
     },
-    CodeTTL: 5 //minutes
+    CodeTTL: 5 //minutes,
+     , mail: {
+        host: process.env.MAILSERVER,
+        mail: process.env.DEFAULTEMAIL,
+        password: process.env.EMAILPASSWORD,
+        accountsman: process.env.ACCOUNTSMANMAIL,
+    }
+    ,APPROOT: process.env.APPROOT
 };
 
 
