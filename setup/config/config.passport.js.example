@@ -68,8 +68,7 @@ passport.use( new EmailStrategy({ usernameField: 'email' }, async (email, passwo
       let euid = care.emailuid
       , Email = care.Email
       , activationPath = config.get('/APPROOT') + '/csymapp/emailprofile/' + Code 
-      , redirect = req.query.redirecturl || req.query.redirect || req.connection.remoteAddress || req.socket.remoteAddress || req.connection.socket.remoteAddress
-      activationPath += '?redirect=' + redirect
+      , redirect = ''
       ;[err, care] = await to ( Familyfe.EmailProfile.emailActivation({Code,EmailprofileEmailuid:euid}, Email, activationPath))
       return done({ message: JSON.stringify({Email:`Email ${email} is not active. Please activate using code which has been sent to your email address. You may need to check your spam folder.`}), status:422});
   }
