@@ -27,6 +27,20 @@ class router
 		let app;
 		let [err, care, dontcare] = [];
 
+		if(req.query.csymappjson) {
+			let json = JSON.parse(req.query.csymappjson);
+			delete req.query.csymappjson
+			for(let i in json) {
+				req.body[i] = json[i];
+			}
+		}
+
+		if(!req.headers.Authorization && !req.headers.authorization)
+			if(req.body.token)
+				req.headers['authorization'] = `bearer ${req.body.token}`
+			else if(req.query.token)
+			req.headers['authorization'] = `bearer ${req.query.token}`
+
 		try 
 		{
 			app = (new (require(__dirname+'/../'+appname)))// /api/users/uid;

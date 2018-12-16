@@ -11,7 +11,7 @@ const criteria = {
 
 
 const config = {
-    name:"testing",
+    name:"testator",
     displayname:false,      // || or false if it should not be shown in app list
 	// url:"csystem/app/elements",
 	enabled: {    // require this from db

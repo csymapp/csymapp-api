@@ -26,6 +26,11 @@ module.exports = (sequelize, DataTypes) => {
 			type:DataTypes.BOOLEAN,
 			allowNull: false, 
 			defaultValue: true
+		},
+		Installed: {
+			type:DataTypes.BOOLEAN,
+			allowNull: false, 
+			defaultValue: false
 		}
 	},
 	{
@@ -51,7 +56,16 @@ module.exports = (sequelize, DataTypes) => {
 			foreignKey: {
 				allowNull: false
 			}
-	    });
+		});
+		
+	    App.belongsTo(models.Family, {
+	    	onDelete: "CASCADE",
+	    	onUpdate: "CASCADE",
+			foreignKey: {
+				allowNull: false
+			}
+		});
+		
 	}
 
 

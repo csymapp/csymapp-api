@@ -40,14 +40,6 @@ class firstTimeSetup extends csystem
 		;[err, dontcare] = await to (self.dbSync(true))
 		if(err) throw (err)
 
-		console.log('Setting up Apps');
-		;[err, care] = await to(Familyfe.apps.setupallapps())
-
-		if(err){
-			console.log(err)
-			if(err) throw (err)
-		}
-
 		console.log('Setting up system families')
 		;[err, care] = await to(Familyfe.Family.create({
 			FamilyName:'World',
@@ -60,6 +52,15 @@ class firstTimeSetup extends csystem
 		}
 
 		let FamilyId = care;
+
+		console.log('Setting up Apps');
+		;[err, care] = await to(Familyfe.apps.setupallapps(FamilyId))
+
+		if(err){
+			console.log(err)
+			if(err) throw (err)
+		}
+
 		console.log(`Installing apps for ${FamilyId}`)
 		
 		;[err, care] = await to(Familyfe.apps.installAppsforFamily({

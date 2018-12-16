@@ -652,6 +652,49 @@ class Person extends abstractPerson
 		callback(null, user.IsActive);
 	}
 
+	async hasRole(role, app, personId, family)
+	{
+		let self = this
+		,[err, care] = [];
+		;[err, care] = await to(self.sequelize.models.Family.findAll(
+			{
+				include: [
+					{
+						model: self.sequelize.models.FamilyMember
+						, where: {
+							PersonUid:personId
+						}
+					},
+				{
+					model: self.sequelize.models.InstalledApp,
+					where:{
+						FamilyFamilyId:family
+					},
+					attributes: ["InstalledAppId"],
+					include: 
+						[
+							{
+								model:self.sequelize.models.App,
+								where: {AppName: app},
+								attributes: ['AppId', 'AppName'],
+								include:[
+									{
+										model:self.sequelize.models.Role,
+										where:{Role: role},
+										attributes: ['RoleId', 'Role']
+								}]
+							}
+						]
+				}
+				]
+			}
+		))
+		if(err) throw err
+		// console.log(care[0].dataValues.InstalledApps[0].dataValues.App.dataValues.Roles)
+		if(care === null) return {}
+		return JSON.parse(JSON.stringify(care));
+	}
+
 }
 
 class abstractFamily extends abstractWorld

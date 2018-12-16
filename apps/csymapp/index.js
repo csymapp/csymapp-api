@@ -14,6 +14,7 @@ csystem = require(__dirname+"/../csystem").csystem,
 ,TwitterProfile = require(__dirname+"/profiles/twitter")
 ,LinkedinProfile = require(__dirname+"/profiles/linkedin")
 ,TelephoneProfile = require(__dirname+"/profiles/telephone")
+,Apps = require(__dirname+"/app/")
 
 class csymapp extends csystem {
 
@@ -29,12 +30,8 @@ class csymapp extends csystem {
     }
     
     async user(req, res, nex) {
-        // console.log(req.headers)
         let [err, care] = [];
         ;[err, care] = await to(User.main(req, res));
-        // if(typeof err === 'object')
-        //     if(err) throw (''+err+'')
-        // else throw (err)
         if(err) throw (err)
     }
 
@@ -89,6 +86,13 @@ class csymapp extends csystem {
     async telephoneprofile(req, res, next) {
         let [err, care] = [];
         ;[err, care] = await to(TelephoneProfile.main(req, res, next));
+        if(err) throw (err)
+    }
+
+    async app(req, res, next) {
+        let self = this
+        let [err, care] = [];
+        ;[err, care] = await to(Apps.main(req, res, next));
         if(err) throw (err)
     }
 

@@ -73,9 +73,15 @@ class Csystem
 		let __promisifiedPassportAuthentication = function () {
 		    return new Promise((resolve, reject) => {
 		    	passport.authenticate('jwt', {session: false}, (err, user, info) => {
-		        	if(err)return reject(err)
-		        	if(info)return reject({message:info.message, status:422})
-		        	// res.json(user)
+		        	if(err) {
+						req.isAuthenticated = false;
+						return reject(err)
+					}
+		        	if(info){
+						req.isAuthenticated = false;
+						return reject({message:info.message, status:422})
+					}
+		        	req.isAuthenticated = user;
 		        	return resolve(user)
 		        })(req, res) 
 		    })
