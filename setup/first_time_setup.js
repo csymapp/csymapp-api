@@ -40,9 +40,9 @@ class firstTimeSetup extends csystem
 		;[err, dontcare] = await to (self.dbSync(true))
 		if(err) throw (err)
 
-		console.log('Setting up system families')
+		console.log('Setting up csystem families')
 		;[err, care] = await to(Familyfe.Family.create({
-			FamilyName:'World',
+			FamilyName:'Csystem',
 	    	hierarchyLevel:null,
 	    	parentFamilyId: null
 		}))
@@ -72,6 +72,39 @@ class firstTimeSetup extends csystem
 			if(err) throw (err)
 		}
 
+
+		console.log('Setting up system families')
+		;[err, care] = await to(Familyfe.Family.create({
+			FamilyName:'World',
+	    	hierarchyLevel:null,
+	    	parentFamilyId: null
+		}))
+		if(err){
+			console.log(err)
+			if(err) throw (err)
+		}
+
+		FamilyId = care;
+
+		// console.log('Setting up Apps');
+		// ;[err, care] = await to(Familyfe.apps.setupallapps(FamilyId))
+
+		// if(err){
+		// 	console.log(err)
+		// 	if(err) throw (err)
+		// }
+
+		console.log(`Installing apps for ${FamilyId}`)
+		
+		;[err, care] = await to(Familyfe.apps.autoinstallAppsforFamily({
+			FamilyId,
+	    	Apps:'all'
+		}))
+		if(err){
+			console.log(err)
+			if(err) throw (err)
+		}
+
 		console.log('setting up test family')
 		;[err, care] = await to(Familyfe.Family.create({
 			FamilyName:'TestFamily',
@@ -86,7 +119,7 @@ class firstTimeSetup extends csystem
 		FamilyId = care;
 		console.log(`Installing apps for ${FamilyId}`)
 		
-		;[err, care] = await to(Familyfe.apps.installAppsforFamily({
+		;[err, care] = await to(Familyfe.apps.autoinstallAppsforFamily({
 			FamilyId,
 	    	Apps:'all'
 		}))

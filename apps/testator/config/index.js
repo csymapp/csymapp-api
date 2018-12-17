@@ -25,7 +25,7 @@ const config = {
         "user",
         "root"
     ], 
-    AutoInstall: true,
+    AutoInstall: false,
     "canuninstall":
     {
         root:false,

@@ -153,16 +153,10 @@ class appsConfig
 		return care.dataValues
 	}
 
-    async setupSingleapp(app, FamilyId)
-    {
-        let self = this;
-        let _root = __dirname+"/../../apps/";
-        let [err, care] = [];
-        //console.log("setting up all apps")
-
-        let configFiles = []
-
-        fse
+	async getConfigFiles() {
+		let _root = __dirname+"/../../apps/";
+		let configFiles = []
+		fse
 		.readdirSync(__dirname+'/../../apps/')
 		.forEach((file)=>{
 			let configFolder = path.join(_root, file, 'config')
@@ -201,81 +195,104 @@ class appsConfig
 				}catch(err){}
 			})
 		})
+		return configFiles
+	}
 
-		// console.log('finished reading....')
-		// console.log(configFiles)
-		// let self = this;
+	async  createApps(path, familyId) {
+		let self = this
+		,[err, care] = []
+		let thisappconfig = require(path);
+		let appname = thisappconfig.get("/name")
+		let groups = thisappconfig.get("/groups")
+		let canuninstall = thisappconfig.get("/canuninstall")
+		let enabled = thisappconfig.get("/enabled")
+		let Enabled = thisappconfig.get("/Enabled")
+		let AutoInstall = thisappconfig.get("/AutoInstall")
+		// console.log(enabled)
+		// console.log(Enabled)
 
-		async function createRoles(role, appId, appName, canuninstall) {
-			;[err, care] = await to(self.sequelize.models.Role.create({
-		    	Role:role,
-		    	AppAppId: appId,
-		    	UniqueRole: `${appName}${role}`,
-		    	canUninstall:canuninstall[role]
-		    }))
-		    // console.log('role')
-		    let roleId;
-		    if (err) {	// role already exists
-		    	;[err, care] = await to(self.sequelize.models.Role.findOne({where:{Role:role}}));
-		    	roleId = care.dataValues.RoleId;
-		    } else {
-		    	roleId = care.dataValues.RoleId;
-		    }
-		    let ret = {};
-		    ret[roleId] = role;
-		    return ret;
-		    // return {groupId:role};
-		 }
+		;[err, care] = await to(self.sequelize.models.App.create({
+			AppName:appname,
+			AutoInstall: AutoInstall,
+			Enabled: Enabled,
+			FamilyFamilyId:familyId
+		}))
 
-
-
-		async function createApps(path, familyId) {
-			let thisappconfig = require(path);
-		    let appname = thisappconfig.get("/name")
-		    let groups = thisappconfig.get("/groups")
-		    let canuninstall = thisappconfig.get("/canuninstall")
-		    let enabled = thisappconfig.get("/enabled")
-		    let Enabled = thisappconfig.get("/Enabled")
-		    let AutoInstall = thisappconfig.get("/AutoInstall")
-		    // console.log(enabled)
-		    // console.log(Enabled)
-
-		    ;[err, care] = await to(self.sequelize.models.App.create({
-		    	AppName:appname,
-		    	AutoInstall: AutoInstall,
-				Enabled: Enabled,
-				FamilyFamilyId:familyId
-		    }))
-
-		    if (err) throw (err.errors);
-		    let AppId = care.dataValues.AppId;	// for a single app
-		    // console.log(appname)
-		    // console.log(groups)
-		    // console.log(canuninstall)
-		   
-		    // let promises = groups.map(createRoles);
-		    let promises = groups.map( function(x) { return createRoles(x, AppId, appname, canuninstall); })
-			;[err, care] = await to(Promise.all(promises));
-
-			if (err) throw (err)
-
-			let tmpGroups = {};
-			for(let i in care) {
-				for (let j in care[i]) {
-					tmpGroups[j] = care[i][j];
-				}
-			}
-
-			// console.log(care);
-
-			let groupNames = [], groupIds = [];
-			
-			for( let i in tmpGroups) {
-				groupIds.push(i)
-				groupNames.push(care[i])
-			}
-		 	return true;
+		if (err) throw (err.errors);
+		let AppId = care.dataValues.AppId;	// for a single app
+		if(AutoInstall === true) {
+			console.log('installing for all family')
+			;[err, care] = await to(self.installSingleAppforAllFamilies({
+				Apps:AppId
+			}))
 		}
+		else {
+			console.log('installing for single family')
+			;[err, care] = await to(self.installSingleAppforSingleFamily({
+				Apps:AppId,
+				family: 1
+			}))
+		}
+
+		//AutoInstall
+		
+		// console.log(appname)
+		// console.log(groups)
+		// console.log(canuninstall)
+	   
+		// let promises = groups.map(createRoles);
+		let promises = groups.map( function(x) { return self.createRoles(x, AppId, appname, canuninstall); })
+		;[err, care] = await to(Promise.all(promises));
+
+		if (err) throw (err)
+
+		let tmpGroups = {};
+		for(let i in care) {
+			for (let j in care[i]) {
+				tmpGroups[j] = care[i][j];
+			}
+		}
+
+		let groupNames = [], groupIds = [];
+		
+		for( let i in tmpGroups) {
+			groupIds.push(i)
+			groupNames.push(care[i])
+		}
+		 return true;
+	}
+
+	async createRoles(role, appId, appName, canuninstall) {
+		let self = this
+		,[err,care] = []
+		;[err, care] = await to(self.sequelize.models.Role.create({
+			Role:role,
+			AppAppId: appId,
+			UniqueRole: `${appName}${role}`,
+			canUninstall:canuninstall[role]
+		}))
+		// console.log('role')
+		let roleId;
+		if (err) {	// role already exists
+			;[err, care] = await to(self.sequelize.models.Role.findOne({where:{Role:role}}));
+			roleId = care.dataValues.RoleId;
+		} else {
+			roleId = care.dataValues.RoleId;
+		}
+		let ret = {};
+		ret[roleId] = role;
+		return ret;
+		// return {groupId:role};
+	 }
+
+    async setupSingleapp(app, FamilyId)
+    {
+        let self = this;
+        let [err, care] = [];
+        //console.log("setting up all apps")
+		;[err, care] = await to(self.getConfigFiles())
+		if(err) throw err
+		let configFiles = care;
 
 		console.log('Now setting up apps');
 		let tmp = [...configFiles];
@@ -288,18 +305,21 @@ class appsConfig
 			appNames.push(parts)
 		}
 
+		// console.log(tmp)
+
 		for(let i in appNames) 
 			if(appNames[i] === app)
 				configFiles.push(tmp[i])
 
-		console.log(configFiles)
-		let promises = configFiles.map(function(path){return createApps(path, FamilyId)})
+		let promises = configFiles.map(function(path){return self.createApps(path, FamilyId)})
 		;[err, care] = await to(Promise.all(promises));
+		// install for all families
 		console.log(err)
 		if (err) throw (err)
 		return true;
         
-    }
+	}
+	
     async setupallapps(FamilyId)
     {
         let self = this;
@@ -307,126 +327,13 @@ class appsConfig
         let [err, care] = [];
         //console.log("setting up all apps")
 
-        let configFiles = []
-
-        fse
-		.readdirSync(__dirname+'/../../apps/')
-		.forEach((file)=>{
-			let configFolder = path.join(_root, file, 'config')
-			
-			try
-			{
-				fse
-				.readdirSync(configFolder)
-				.filter((configfile) =>
-					configfile === 'index.js'
-				)
-				.forEach((configfile)=>{
-					configFiles.push(path.join(configFolder, configfile));
-				})
-				console.log(`ConfigFolder: ${configFolder}`)
-
-			} catch(err){}
-
-			let innerConfig = path.join(_root, file);
-			fse
-			.readdirSync(innerConfig)
-			.forEach((file)=>{
-				configFolder = path.join(innerConfig, file, 'config')
-				// console.log(`checking files in ${configFolder}`)
-				try
-				{
-					fse
-					.readdirSync(configFolder)
-					.filter((configfile) =>
-						configfile === 'index.js'
-					)
-					.forEach((configfile)=> {
-						configFiles.push(path.join(configFolder, configfile));
-					})
-					console.log(`ConfigFolder: ${configFolder}`)
-				}catch(err){}
-			})
-		})
-
-		// console.log('finished reading....')
-		// console.log(configFiles)
-		// let self = this;
-
-		async function createRoles(role, appId, appName, canuninstall) {
-			;[err, care] = await to(self.sequelize.models.Role.create({
-		    	Role:role,
-		    	AppAppId: appId,
-		    	UniqueRole: `${appName}${role}`,
-		    	canUninstall:canuninstall[role]
-		    }))
-		    // console.log('role')
-		    let roleId;
-		    if (err) {	// role already exists
-		    	;[err, care] = await to(self.sequelize.models.Role.findOne({where:{Role:role}}));
-		    	roleId = care.dataValues.RoleId;
-		    } else {
-		    	roleId = care.dataValues.RoleId;
-		    }
-		    let ret = {};
-		    ret[roleId] = role;
-		    return ret;
-		    // return {groupId:role};
-		 }
-
-
-
-		async function createApps(path, familyId) {
-			let thisappconfig = require(path);
-		    let appname = thisappconfig.get("/name")
-		    let groups = thisappconfig.get("/groups")
-		    let canuninstall = thisappconfig.get("/canuninstall")
-		    let enabled = thisappconfig.get("/enabled")
-		    let Enabled = thisappconfig.get("/Enabled")
-		    let AutoInstall = thisappconfig.get("/AutoInstall")
-		    // console.log(enabled)
-		    // console.log(Enabled)
-
-		    ;[err, care] = await to(self.sequelize.models.App.create({
-		    	AppName:appname,
-		    	AutoInstall: AutoInstall,
-				Enabled: Enabled,
-				FamilyFamilyId:familyId
-		    }))
-
-		    if (err) throw (err.errors);
-		    let AppId = care.dataValues.AppId;	// for a single app
-		    // console.log(appname)
-		    // console.log(groups)
-		    // console.log(canuninstall)
-		   
-		    // let promises = groups.map(createRoles);
-		    let promises = groups.map( function(x) { return createRoles(x, AppId, appname, canuninstall); })
-			;[err, care] = await to(Promise.all(promises));
-
-			if (err) throw (err)
-
-			let tmpGroups = {};
-			for(let i in care) {
-				for (let j in care[i]) {
-					tmpGroups[j] = care[i][j];
-				}
-			}
-
-			// console.log(care);
-
-			let groupNames = [], groupIds = [];
-			
-			for( let i in tmpGroups) {
-				groupIds.push(i)
-				groupNames.push(care[i])
-			}
-		 	return true;
-		}
+        ;[err, care] = await to(self.getConfigFiles())
+		if(err) throw err
+		let configFiles = care;
 
 		console.log('Now setting up apps');
 		console.log(configFiles)
-		let promises = configFiles.map(function(path){return createApps(path, FamilyId)})
+		let promises = configFiles.map(function(path){return self.createApps(path, FamilyId)})
 		;[err, care] = await to(Promise.all(promises));
 		console.log(err)
 		if (err) throw (err)
@@ -435,10 +342,12 @@ class appsConfig
     }
 
 
-    async getAllApps (everything, where) {
+    async getAllApps (everything, where, where1={}) {
 		let self = this;
 		let appIds = []
 		if(!where) where = true
+		// console.log('=====================')
+		// console.log(where)
 		let [err, care] = await to(self.sequelize.models.App.findAll(
 			{
 			attributes:["AppId", "AppName", "AutoInstall", "Enabled", "FamilyFamilyId"],
@@ -446,16 +355,74 @@ class appsConfig
 			include: [
 				{
 					model:self.sequelize.models.Role,
-					attributes:["RoleId", "Role", "canUninstall"]
+					attributes:["RoleId", "Role", "canUninstall"],
+					include : [
+						{
+							model: self.sequelize.models.MemberRole
+						}
+					]
 				},
 				{
 					model:self.sequelize.models.InstalledApp,
 					attributes:["FamilyFamilyId"],
+					
 				}
 			]
 			}
 		));
+		// console.log(where1)
+		let [err1, care1] = await to(self.sequelize.models.Family.findAll(
+			{
+				include: [
+					{
+						model: self.sequelize.models.FamilyMember
+						,attributes: []
+						, where: where1.Person
+					},
+				{
+					model: self.sequelize.models.InstalledApp,
+					// where:{
+					// 	FamilyFamilyId:family
+					// },
+					attributes: ["InstalledAppId"],
+					include: 
+						[
+							{
+								model:self.sequelize.models.App,
+								// where: {AppName: app},
+								attributes: ['AppId', 'AppName'],
+								include:[
+									{
+										model:self.sequelize.models.Role,
+										// where:{Role: role},
+										attributes: ['RoleId', 'Role']
+								}]
+							}
+						]
+				}
+				]
+			}
+		))
+		// console.log(care1)
 		if(care===null) care = {}
+		let ret = [],
+		apps = []
+		for(let i in care1) {
+			let installedApps = care1[i].dataValues.InstalledApps;
+			for(let j in installedApps) {
+				let appName = installedApps[j].App.dataValues.AppName
+				apps.push(appName)
+			}
+		}
+		// console.log(apps)
+		for(let i in care) {
+			let appName = care[i].AppName
+			if(apps.indexOf(appName) > -1) {
+				ret.push(care[i])
+			}
+			// console.log(care[i].AppName)
+		}
+		care = ret
 		if(everything) return care;
 	
 		for(let i in care) {
@@ -471,7 +438,7 @@ class appsConfig
     	let FamilyId = options.FamilyId
     	let appIds = [];
     	if(app === 'all') {
-    		let [err, care] = await to(appIds = self.getAllApps());
+			let [err, care] = await to(self.getAllApps());
     		appIds = care;
     	} else {
     		if (typeof app === 'number')
@@ -500,7 +467,53 @@ class appsConfig
     	let promises = appIds.map(function(appid){return installforFamily(appid, FamilyId)})
 		let [err, care] = await to(Promise.all(promises))
 		return [err, care];
-    }
+	}
+	
+	
+    async autoinstallAppsforFamily(options){
+    	let self = this;
+    	let app = options.Apps;
+    	let FamilyId = options.FamilyId
+    	let appIds = [];
+    	if(app === 'all') {
+			let [err, care] = await to(self.getAllApps(true));
+			for(let i in care) {
+			let autoInstall = (care[i].dataValues.AutoInstall)
+
+			if(autoInstall)
+				appIds.push(care[i].dataValues.AppId);
+			}
+    	} else {
+    		if (typeof app === 'number')
+    			appIds.push(app)
+    		else appIds = app
+		}
+		console.log(appIds)
+
+    	async function installforFamily(appid, FamilyId) {
+    		//
+    		// console.log(`${FamilyId}::${appid}`)
+    		let [err, care] = []
+    		// try{
+    		
+    		;[err, care] = await to(self.sequelize.models.InstalledApp.findOne({where:{
+    			AppAppId:appid,
+    			FamilyFamilyId:FamilyId
+    			}
+    		}))
+    		if(care === null) {
+				;[err, care] = await to(self.sequelize.models.InstalledApp.create({
+					AppAppId:appid,
+					FamilyFamilyId:FamilyId
+				}))
+			}
+    	}
+    	let promises = appIds.map(function(appid){return installforFamily(appid, FamilyId)})
+		let [err, care] = await to(Promise.all(promises))
+		return [err, care];
+	}
+	
+
 
     async getAllFamilies() {
     	let self = this;
@@ -523,7 +536,39 @@ class appsConfig
     	let promises = familyIds.map(function(familyId){ options.FamilyId=familyId; return self.installAppsforFamily(options)})
 		;[err, care] = await to(Promise.all(promises))
 		return [err, care];
-    }
+	}
+	
+    async installSingleAppforSingleFamily(options) {
+		// if autoInstall
+    	let self = this;
+    	let familyIds = [];
+    	let [err, care] = [];
+    	
+       	// ;[err, care] = await to(self.getAllFamilies());
+		familyIds = [options.family];
+		console.log(familyIds)
+    	//options.Apps
+    	let promises = familyIds.map(function(familyId){ options.FamilyId=familyId; return self.installAppsforFamily(options)})
+		;[err, care] = await to(Promise.all(promises))
+		return [err, care];
+	}
+	
+	
+    async installSingleAppforAllFamilies(options) {
+		// if autoInstall
+    	let self = this;
+    	let familyIds = [];
+    	let [err, care] = [];
+    	
+       	;[err, care] = await to(self.getAllFamilies());
+    	familyIds = care;
+    	//options.Apps
+    	let promises = familyIds.map(function(familyId){ options.FamilyId=familyId; return self.installAppsforFamily(options)})
+		;[err, care] = await to(Promise.all(promises))
+		return [err, care];
+	}
+	
+
 
     async createAppGroupsofuser(whichuser, whichApp, whichGroups){
     	let self = this;

@@ -43,7 +43,7 @@ class Profile extends csystem{
 										IsActive:true,
 										},
 									IsActive:true,
-									Families: [1]
+									Families: [2]
 								
 								}))
 								if(err) 
@@ -69,7 +69,7 @@ class Profile extends csystem{
 											ProfilePic: user.photos[0].value
 											},
 										IsActive:true,
-										Families: [1]
+										Families: [2]
 									
 									}))
 									if(err) throw(err)
@@ -182,7 +182,7 @@ class Profile extends csystem{
 		// 			IsActive:true,
 		// 			},
 		// 		IsActive:true,
-		// 		Families: [1]
+		// 		Families: [2]
 		// 	}))
 		// 	if(err) throw err
 		// 	let useruid = care.uid;

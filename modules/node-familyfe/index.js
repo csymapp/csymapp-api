@@ -538,7 +538,7 @@ class Person extends abstractPerson
 		let uid = care.dataValues.uid
 		// console.log(uid)
 		// add to world
-		let [err1, care1] = await to(self.Family.addMember(1, uid))
+		let [err1, care1] = await to(self.Family.addMember(2, uid))
 		// console.log(care1)
 		// console.log(err)
 
@@ -652,6 +652,82 @@ class Person extends abstractPerson
 		callback(null, user.IsActive);
 	}
 
+	async getApps(personId)
+	{
+		let self = this
+		,[err, care] = [];
+
+		// ;[err, care] = await to(self.sequelize.models.App.findAll(
+		// 	{
+		// 	attributes:["AppId", "AppName", "AutoInstall", "Enabled", "FamilyFamilyId"],
+		// 	// where:where,
+		// 	include: [
+		// 		{
+		// 			model:self.sequelize.models.Role,
+		// 			attributes:["RoleId", "Role", "canUninstall"],
+		// 			include: [
+		// 				{
+		// 					model:self.sequelize.models.MemberRole,
+		// 					// include: [
+		// 					// 	{
+		// 					// 		model:self.sequelize.models.FamilyMember,
+		// 					// 	}]
+		// 				}
+		// 			]
+		// 		},
+		// 		{
+		// 			model:self.sequelize.models.InstalledApp,
+		// 			attributes:["FamilyFamilyId"],
+		// 			// include: [
+		// 			// 	{
+		// 			// 		// model:self.sequelize.models.Family,
+		// 			// 		// attributes:["RoleId", "Role", "canUninstall"]
+		// 			// 	}
+		// 			// ]
+		// 		}
+		// 	]
+		// 	}
+		// ));
+
+		;[err, care] = await to(self.sequelize.models.Family.findAll(
+			{
+				include: [
+					{
+						model: self.sequelize.models.FamilyMember
+						,attributes: []
+						, where: {
+							PersonUid:personId
+						}
+					},
+				{
+					model: self.sequelize.models.InstalledApp,
+					// where:{
+					// 	FamilyFamilyId:family
+					// },
+					attributes: ["InstalledAppId"],
+					include: 
+						[
+							{
+								model:self.sequelize.models.App,
+								// where: {AppName: app},
+								attributes: ['AppId', 'AppName'],
+								include:[
+									{
+										model:self.sequelize.models.Role,
+										// where:{Role: role},
+										attributes: ['RoleId', 'Role']
+								}]
+							}
+						]
+				}
+				]
+			}
+		))
+		if(err) throw err
+		// console.log(care[0].dataValues.InstalledApps[0].dataValues.App.dataValues.Roles)
+		if(care === null) return {}
+		return care;
+	}
 	async hasRole(role, app, personId, family)
 	{
 		let self = this

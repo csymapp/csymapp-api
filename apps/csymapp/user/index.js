@@ -52,7 +52,7 @@ class User extends csystem{
 						IsActive:false,
 						},
 					IsActive:true,
-					Families: [1]
+					Families: [2]
 				}))
 				if(err) throw (err)
 
@@ -76,7 +76,7 @@ class User extends csystem{
 						IsActive:false,
 						},
 					IsActive:true,
-					Families: [1]
+					Families: [2]
 				}))
 				if(err) throw err
 				entropy.use(charset8)
@@ -92,10 +92,10 @@ class User extends csystem{
 			if(err) throw err
 			let useruid = care.uid;
 			console.log('creating Roles in World for new user');
-			;[err, care] = await to(Familyfe.Family.getMember(1, useruid))
+			;[err, care] = await to(Familyfe.Family.getMember(2, useruid))
 			if(err) throw (err)
 			let memberId = care
-			;[err, care] = await to(Familyfe.Family.getspecificMemberRoleforFamily(1, "nobody"))
+			;[err, care] = await to(Familyfe.Family.getspecificMemberRoleforFamily(2, "nobody"))
 			if(err){
 				// console.log(err)
 				throw (err)

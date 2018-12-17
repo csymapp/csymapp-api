@@ -71,9 +71,7 @@ class App extends csystem{
         if(Object.keys(care).length === 0){
             throw ('permission denied')
         } 
-
         let action = body.action || "install"
-
 
         let data = JSON.parse(JSON.stringify(req.body))
         ;[err, care] = await to (Familyfe.apps.setupSingleapp(app, 1))
@@ -134,20 +132,34 @@ class App extends csystem{
         let appIdorName = req.params.v1
         , [err, care] = []
         , self = this
+        , body = req.body
+        , uid = body.uid
 
+        // console.log(body)
         // list apps
-        if(!appIdorName) {
-            [err, care] = await to(Familyfe.apps.getAllApps(true, {Enabled: true}));
+        if(uid) {
+            // should be logged in____
+            // ;[err, care] = await to(Familyfe.Person.getApps(uid));
+            ;[err, care] = await to(Familyfe.apps.getAllApps(true, {Enabled: true}, {Person:{PersonUid:uid}}));
             if(err) throw err
+            // console.log(care)
             return care
         }
-        // list single app
-        ;[err, care] = await to(Familyfe.apps.getAllApps(true, {AppId: appIdorName, Enabled: true}));
-        if(err) throw err
-        if(!Object.keys(care).length) {
-            ;[err, care] = await to(Familyfe.apps.getAllApps(true, {AppName: appIdorName, Enabled: true}));
+        else {
+            if(!appIdorName) {
+                [err, care] = await to(Familyfe.apps.getAllApps(true, {Enabled: true}));
+                if(err) throw err
+                return care
+            }
+            // list single app
+            ;[err, care] = await to(Familyfe.apps.getAllApps(true, {AppId: appIdorName, Enabled: true}));
             if(err) throw err
+            if(!Object.keys(care).length) {
+                ;[err, care] = await to(Familyfe.apps.getAllApps(true, {AppName: appIdorName, Enabled: true}));
+                if(err) throw err
+            }
         }
+        // console.log(care)
         return care
     }
 
