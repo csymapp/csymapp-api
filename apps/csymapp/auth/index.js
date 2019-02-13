@@ -131,9 +131,9 @@ class Auth extends csystem{
 		let token = req.query.token
 		let returned = req.params.v2
 
+		let isAuthorization = (req.headers.authorization || token)?true:false
 		req.headers['content-type'] = 'application/json'
 		req.headers['authorization'] = req.headers.authorization || `bearer ${token}`
-		let isAuthorization = (req.headers.authorization || token)?true:false
 		;[err, care] = await to(self.isAuthenticated(res, req))
 		let loggedInPerson;
 		if(care) loggedInPerson = care.uid
