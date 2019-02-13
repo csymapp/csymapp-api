@@ -19,6 +19,7 @@ class Profile extends csystem{
 		
 		let redirectUrl = req.query.redirecturl || req.query.redirect
 		let token = req.query.token
+		let isAuthorization = (req.headers.authorization || token)?true:false
 		let returned = req.params.v2 === callback?true:false
 
 		let __promisifiedPassportAuthentication = async function () {
@@ -29,7 +30,7 @@ class Profile extends csystem{
 					// if(returned) {
 						// let err = err1
 						if(err) {
-							if(err.message === 'jwt expired' || err.message === 'invalid token' || err.message==='jwt malformed') throw err 
+							if(err.message === 'jwt expired' || err.message === 'invalid token' || (err.message==='jwt malformed' && isAuthorization)) throw err 
 							;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailProfile({Email:user.emails[0].value.toLowerCase()}))
 							if(err) throw (err)
 							personuid = care.uid

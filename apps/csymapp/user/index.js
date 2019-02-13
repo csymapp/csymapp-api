@@ -21,6 +21,8 @@ class User extends csystem{
 		let uid = req.params.v1
 		let [err, care] = []
 
+		let isAuthorization = (req.headers.authorization || token)?true:false
+
 		let isLogged ;
 		let body = JSON.parse(JSON.stringify(req.body))
 
@@ -36,7 +38,7 @@ class User extends csystem{
 		;[err, care] = await to(self.isAuthenticated(res, req))
 		
 		if(err)  {
-			if(err.message === 'jwt expired' || err.message === 'invalid token' || err.message==='jwt malformed') throw err
+			if(err.message === 'jwt expired' || err.message === 'invalid token' || (err.message==='jwt malformed' && isAuthorization)) throw err
 			// body.phone = isphone(body.phone)[0]
 			// if phone
 			if(body.profile === 'phone') {

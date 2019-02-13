@@ -133,6 +133,7 @@ class Auth extends csystem{
 
 		req.headers['content-type'] = 'application/json'
 		req.headers['authorization'] = req.headers.authorization || `bearer ${token}`
+		let isAuthorization = (req.headers.authorization || token)?true:false
 		;[err, care] = await to(self.isAuthenticated(res, req))
 		let loggedInPerson;
 		if(care) loggedInPerson = care.uid
@@ -149,7 +150,7 @@ class Auth extends csystem{
 					// if(returned) {
 						// let err = err1
 						if(err) {
-							if(err.message === 'jwt expired' || err.message === 'invalid token' || err.message==='jwt malformed') throw err 
+							if(err.message === 'jwt expired' || err.message === 'invalid token' || (err.message==='jwt malformed' && isAuthorization)) throw err 
 							;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailProfile({Email:user.emails[0].value.toLowerCase()}))
 							if(err) throw (err)
 							personuid = care.uid
@@ -293,6 +294,7 @@ class Auth extends csystem{
 
 		req.headers['content-type'] = 'application/json'
 		req.headers['authorization'] = `bearer ${token}`
+		let isAuthorization = (req.headers.authorization || token)?true:false
 		;[err, care] = await to(self.isAuthenticated(res, req))
 
 		let personuid;
@@ -317,7 +319,7 @@ class Auth extends csystem{
 					// if(returned) {
 						// let err = err1
 						if(err) {
-							if(err.message === 'jwt expired' || err.message === 'invalid token' || err.message==='jwt malformed') throw err 
+							if(err.message === 'jwt expired' || err.message === 'invalid token' || (err.message==='jwt malformed' && isAuthorization)) throw err 
 							;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailProfile({Email:user.emails[0].value.toLowerCase()}))
 							if(err) throw (err)
 							personuid = care.uid
@@ -472,6 +474,7 @@ class Auth extends csystem{
 
 		req.headers['content-type'] = 'application/json'
 		req.headers['authorization'] = `bearer ${token}`
+		let isAuthorization = (req.headers.authorization || token)?true:false
 		;[err, care] = await to(self.isAuthenticated(res, req))
 
 		
@@ -495,7 +498,7 @@ class Auth extends csystem{
 					// if(returned) {
 						// let err = err1
 						if(err) {
-							if(err.message === 'jwt expired' || err.message === 'invalid token' || err.message==='jwt malformed') throw err 
+							if(err.message === 'jwt expired' || err.message === 'invalid token' || (err.message==='jwt malformed' && isAuthorization)) throw err 
 							;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailProfile({Email:user.emails[0].value.toLowerCase()}))
 							if(err) throw (err)
 							personuid = care.uid
@@ -652,6 +655,7 @@ class Auth extends csystem{
 
 		req.headers['content-type'] = 'application/json'
 		req.headers['authorization'] = `bearer ${token}`
+		let isAuthorization = (req.headers.authorization || token)?true:false
 		;[err, care] = await to(self.isAuthenticated(res, req))
 
 		
@@ -675,7 +679,7 @@ class Auth extends csystem{
 					// if(returned) {
 						// let err = err1
 						if(err) {
-							if(err.message === 'jwt expired' || err.message === 'invalid token' || err.message==='jwt malformed') throw err 
+							if(err.message === 'jwt expired' || err.message === 'invalid token' || (err.message==='jwt malformed' && isAuthorization)) throw err 
 							;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailProfile({Email:user.emails[0].value.toLowerCase()}))
 							if(err) throw (err)
 							personuid = care.uid
@@ -838,6 +842,7 @@ class Auth extends csystem{
 
 		req.headers['content-type'] = 'application/json'
 		req.headers['authorization'] = `bearer ${token}`
+		let isAuthorization = (req.headers.authorization || token)?true:false
 		;[err, care] = await to(self.isAuthenticated(res, req))
 
 		
@@ -860,7 +865,7 @@ class Auth extends csystem{
 					if(errinner) return reject(errinner)
 					// if(returned) {
 						if(err) {
-							if(err.message === 'jwt expired' || err.message === 'invalid token' || err.message==='jwt malformed') throw err 
+							if(err.message === 'jwt expired' || err.message === 'invalid token' ||(err.message==='jwt malformed' && isAuthorization)) throw err 
 							;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailProfile({Email:user.emails[0].value.toLowerCase()}))
 							if(err) throw (err)
 							personuid = care.uid
