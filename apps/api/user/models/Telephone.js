@@ -1,7 +1,8 @@
 'use strict'
 const Promise = require('bluebird')
 const bcrypt = Promise.promisifyAll(require('bcrypt-nodejs')),
-phone = require('phone');
+phone = require('phone')
+, validator = require('validator')
 
 
 async function hashPin(user, options){
@@ -11,10 +12,10 @@ async function hashPin(user, options){
 	}
 
 	if(!user.Cpin)
-		return Promise.reject({code:1002, msg:JSON.stringify({Cpin:"Please confirm your pin"})});
+		return Promise.reject({code:1002, msg:{cpin:"Please confirm your pin"}});
 	if(user.Cpin)
 		if(user.Pin !== user.Cpin)
-			return Promise.reject({code:1002, msg:JSON.stringify({Pin:"Pins don't match"})});
+			return Promise.reject({code:1002, msg:{pin:"Pins don't match",cpin:"Pins don't match"}});
 	return bcrypt.genSaltAsync(SALT_FACTOR)
 		.then((salt)=>bcrypt.hashAsync(user.dataValues.Pin,salt, null))
 		.then(hash=>{
@@ -34,16 +35,17 @@ module.exports = (sequelize, DataTypes) => {
 			unique: true,
 			allowNull: false,
             validate: {
-                // len: {
-                //     args: [8,14],
-                //     msg: JSON.stringify({Phone:'Please enter a valid phone number'})
-                // },
+				isNotNull: function (value, next){
+					if(validator.isEmpty(value))
+						return next({phone:'Please provide a phone number'})
+					else return next();
+				},
                 isUnique: function (value, next) {
 					var self = this;
                     Telephone.find({where: {Telephone: value}})
                         .then(function (user) {
 							if(user)
-								return next(JSON.stringify({Phone:'Phone number already in use'}));
+								return next({phone:'Phone number already in use'});
 							else return next();
                         })
                         .catch(function (err) {
@@ -51,8 +53,10 @@ module.exports = (sequelize, DataTypes) => {
                         });
 				},
 				isPhone: function (value, next) {
-					if(phone(value).length === 0 )
-						return JSON.stringify({Phone:'Please enter a valid phone number'})
+					// if(phone(value).length === 0 )
+					if(!phone(value)[0] ) {
+						return next({phone:'Please enter a valid phone number'})
+					}
 					return next();
 				}
             }
@@ -61,14 +65,21 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.STRING, 
 			allowNull: false,
             validate: {
-            	 len: {
-                    args: [4, 4],
-                    msg: 'Pin should be 4 characters.'
+            	//  len: {
+                //     args: [4, 4],
+                //     msg: 'Pin should be 4 characters.'
+				// },
+				length: (value, next) => {
+					if(validator.isEmpty(value))
+						return next({pin:'Please provide a pin.'});
+					if(!validator.isLength(value, {min:4,max:4}))
+						return next({pin:'Pin should be 4 characters.'});
+					else return next();
 				},
 				isNumeric: function (value, next) {
                     var self = this;
 					if(!isNaN(value))return next();
-					else next(JSON.stringify({Pin:'Please enter a numeric pin'}));
+					else next({pin:'Please enter a numeric pin'});
                 }
             }
 		},

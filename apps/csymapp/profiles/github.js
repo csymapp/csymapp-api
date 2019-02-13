@@ -15,21 +15,24 @@ class Profile extends csystem{
     async patchGithubProfile(req, res) {
 		let self = this;
 		let gituid = req.params.v1
+		if(!gituid)throw ({ status:422, message:{gituid: "Please provide phoneid to modify"}})
+
 		let [err, care] = []
 		;[err, care] = await to(self.isAuthenticated(res, req))
 		if(err) throw err;
 		let authuid = care.uid
-		console.log(req.body)
 		;[err, care] = await to (Familyfe.GitProfile.whichPersonwithGituid(gituid))
-		if(care === null) throw ({ status:422, message:"can't set for another user"})
+			if(err)throw ({ status:422, message:{Permission: "You are not allowed to modify that account"}})
+		if(Object.keys(care).length === 0)throw ({ status:422, message:{github: "Profile not found"}})
 		let uidtoMod = care.uid;
-		console.log(`${authuid} vs ${uidtoMod}`)
-		if(authuid !== uidtoMod)throw ({ status:422, message:"can't set for another user"})
-		
-		if (authuid !== uidtoMod) {
-			throw ({ status:422, message:"can't set for another user"})
-		}
 
+		if (authuid !== uidtoMod) {
+			let [_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", 1, authuid))
+			if(_err)throw ({ status:422, message:{Permission: "You are not allowed to modify that account"}})
+
+			if(!csyAdmin)
+				throw ({ status:422, message:{Permission: "You are not allowed to modify that account"}})
+		}
 		
 		let data = JSON.parse(JSON.stringify(req.body))
 		;[err, care] = await to (Familyfe.GitProfile.update(data, {gituid:gituid}))
@@ -43,19 +46,22 @@ class Profile extends csystem{
     async deleteGithubProfile(req, res) {
 		let self = this;
 		let gituid = req.params.v1
-		
+		if(!gituid)throw ({ status:422, message:{gituid: "Please provide phoneid to modify"}})
 		let [err, care] = []
 		;[err, care] = await to(self.isAuthenticated(res, req))
 		if(err) throw err;
 		let authuid = care.uid
 		;[err, care] = await to (Familyfe.GitProfile.whichPersonwithGituid(gituid))
-		if(care === null) throw ({ status:422, message:"can't set for another user"})
+			if(err)throw ({ status:422, message:{Permission: "You are not allowed to delete that account"}})
+		if(Object.keys(care).length === 0)throw ({ status:422, message:{github: "Profile not found"}})
 		let uidtoMod = care.uid;
-		
-		if(authuid !== uidtoMod)throw ({ status:422, message:"can't set for another user"})
 
 		if (authuid !== uidtoMod) {
-			throw ({ status:422, message:"can't set for another user"})
+			let [_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", 1, authuid))
+			if(_err)throw ({ status:422, message:{Permission: "You are not allowed to delete that account"}})
+
+			if(!csyAdmin)
+				throw ({ status:422, message:{Permission: "You are not allowed to delete that account"}})
 		}
 
 		let data = JSON.parse(JSON.stringify(req.body))
@@ -87,7 +93,7 @@ class Profile extends csystem{
 				break;
 			
 			default:
-				res.send('still building this sections');
+				res.status(422).json({error:{method:`${method} not supported`}});
 		}
     }
     

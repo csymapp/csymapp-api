@@ -42,6 +42,13 @@ module.exports = (sequelize, DataTypes) => {
 				allowNull: false
 			}
 	    });
+	    Role.belongsTo(models.App, {
+	    	onDelete: "CASCADE",
+	    	onUpdate: "CASCADE",
+			foreignKey: {
+				allowNull: false
+			}
+	    });
 	}
 
 	 return Role;

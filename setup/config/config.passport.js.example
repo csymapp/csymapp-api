@@ -70,17 +70,17 @@ passport.use( new EmailStrategy({ usernameField: 'email' }, async (email, passwo
       , activationPath = config.get('/APPROOT') + '/csymapp/emailprofile/' + Code 
       , redirect = ''
       ;[err, care] = await to ( Familyfe.EmailProfile.emailActivation({Code,EmailprofileEmailuid:euid}, Email, activationPath))
-      return done({ message: JSON.stringify({Email:`Please check your inbox/spam folder to activate this email first.`}), status:422});
+      return done({ message: {Email:`Please check your inbox/spam folder to activate this email first.`}, status:422});
   }
   [err, care] = await to(user.comparePass(password))
   if(err) return done(err)
   if(care === false) {
     ;[err, care] =  await to (Familyfe.EmailProfile.whichPerson(user.PersonUid))
-    if(err) return done({ message: JSON.stringify({Password:'Wrong email or password.'}) , emailid: user.emailuid})
+    if(err) return done({ message: {password:'Wrong email or password.'} , emailid: user.emailuid})
     let person = care
     person = JSON.parse(JSON.stringify(person))
   
-    return done({ message: JSON.stringify({Password:'Wrong email or password.'}) , emailid: user.emailuid, uid: person.uid})
+    return done({ message: {password:'Wrong email or password.'} , emailid: user.emailuid, uid: person.uid})
   }
 
   user = JSON.parse(JSON.stringify(user))

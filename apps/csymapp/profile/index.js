@@ -29,7 +29,7 @@ class Profile extends csystem{
 					// if(returned) {
 						// let err = err1
 						if(err) {
-							if(err.message === 'jwt expired' || err.message === 'invalid token') throw err 
+							if(err.message === 'jwt expired' || err.message === 'invalid token' || err.message==='jwt malformed') throw err 
 							;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailProfile({Email:user.emails[0].value.toLowerCase()}))
 							if(err) throw (err)
 							personuid = care.uid
@@ -154,7 +154,7 @@ class Profile extends csystem{
 
 		;[err, care] = await to(self.isAuthenticated(res, req))
 		if(err) throw err;
-		console.log(care)
+		// console.log(care)
 		let myuid = care.uid;
 		req.query.uid=uid;
 
@@ -164,13 +164,14 @@ class Profile extends csystem{
 
 		switch(profileType){
 			case "github":
+				console.log("llllllll")
 				self.addGithubProfile(req);
 		}
 
 
 		
 		// if(err)  {
-		// 	if(err.message === 'jwt expired' || err.message === 'invalid token') throw err
+		// 	if(err.message === 'jwt expired' || err.message === 'invalid token' || err.message==='jwt malformed') throw err
 		// 	// 
 		// 	;[err, care] = await to (Familyfe.Person.beget({
 		// 		Name: body.Name || "Anonymous User", 
@@ -256,13 +257,15 @@ class Profile extends csystem{
 		let self = this;
 		let method = req.method;
 		let [err, care] = [];
+
+		console.log("inside ...........")
 			
 		switch(method) {
-			case 'POST':
-				;[err, care] = await to(self.createNew(req, res));
-				if (err) throw err
-				res.json(care)	
-				break;
+			// case 'POST':
+			// 	;[err, care] = await to(self.createNew(req, res));
+			// 	if (err) throw err
+			// 	res.json(care)	
+			// 	break;
 			// case 'GET':
 			// 	;[err, care] = await to(self.getGatewayTypes(req, res));
 			// 	break;
@@ -270,8 +273,13 @@ class Profile extends csystem{
 			// 	;[err, care] = await to(self.patchGatewayTypes(req, res));
 			// 	if(err) throw(err)
 			// 	break;
+			case 'DELETE':
+				;[err, care] = await to(self.createNew(req, res));
+				if (err) throw err
+				res.json(care)	
+				break;
 			default:
-				res.send('still building this sections');
+				res.status(422).json({error:{method:`${method} not supported`}});
 		}
     }
     

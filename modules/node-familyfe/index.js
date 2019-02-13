@@ -12,16 +12,12 @@
 // const Async = require('async');
 // const MongoModels = require('mongo-models');
 const validator = require('validator');
-const  Objlen = require('object-length');
+const Objlen = require('object-length');
 const sentenceCase = require('sentence-case');
 const Bcrypt = require('bcrypt');
 const to = require('await-to-js').to;
 const randomstring = require('randomstring');
-const async = require('async')
-,moment = require('moment')
-,config = require(__dirname+'/../../config/config.system')
-,isphone = require('phone')
-, mailer = require(__dirname+'/../../apps/csystem/mailer')
+const async = require('async'), moment = require('moment'), config = require(__dirname + '/../../config/config.system'), isphone = require('phone'), mailer = require(__dirname + '/../../apps/csystem/mailer')
 // const {ObjectId} = require('mongodb');
 // const safeObjectId = s => ObjectId.isValid(s) ? new ObjectId(s) : null;
 
@@ -29,258 +25,277 @@ const async = require('async')
 /*
  * Familyfe class
  */
-class familyfe
-{
+class familyfe {
 
-	constructor(sequelize)
-	{
+	constructor(sequelize) {
 		let self = this;
 		self.sequelize = sequelize
 		// self.MongoModels = MongoModels;
 		// self.
 	}
-    connect(callback)
-    {
-    	let self = this;
-    	self.dbDriver = process.env.DBDRIVER || "mongo"
-    	let dbDriver = self.dbDriver
-    	switch(dbDriver)
-		{
-		  case "mysql":
-		  	const mysql_d = require("./drivers/mysql")
-		    break;
-		  case "mongo": //mongo is default
-		  default:
-		    const mongo_d = new (require("./drivers/mongo")) (function(){
-		    	callback();
-		    })
-		    
+	connect(callback) {
+		let self = this;
+		self.dbDriver = process.env.DBDRIVER || "mongo"
+		let dbDriver = self.dbDriver
+		switch (dbDriver) {
+			case "mysql":
+				const mysql_d = require("./drivers/mysql")
+				break;
+			case "mongo": //mongo is default
+			default:
+				const mongo_d = new(require("./drivers/mongo"))(function () {
+					callback();
+				})
+
 		}
-    }
-    setCollection(collection)
-    {
-    	this.MongoModels.collection = collection;
-    	this.collection = collection
-    }
+	}
+	setCollection(collection) {
+		this.MongoModels.collection = collection;
+		this.collection = collection
+	}
 
-    generatePasswordHash(password, callback) {
+	generatePasswordHash(password, callback) {
 
-        Async.auto({
-            salt: function (done) {
+		Async.auto({
+			salt: function (done) {
 
-                Bcrypt.genSalt(10, done);
-            },
-            hash: ['salt', function (results, done) {
+				Bcrypt.genSalt(10, done);
+			},
+			hash: ['salt', function (results, done) {
 
-                Bcrypt.hash(password, results.salt, done);
-            }]
-        }, (err, results) => {
+				Bcrypt.hash(password, results.salt, done);
+			}]
+		}, (err, results) => {
 
-            if (err) {
-                return callback(err);
-            }
+			if (err) {
+				return callback(err);
+			}
 
-            callback(null, {
-                password,
-                hash: results.hash
-            });
-        });
-    }
+			callback(null, {
+				password,
+				hash: results.hash
+			});
+		});
+	}
 
-    extend(val, ery)
-    {
-    	let extended = {}
-    	let index = 0;
-    	let keyisNumeric = true;
-    	for(let key in val)
-    	{
-    		keyisNumeric = parseInt(key).toString() === "NaN"?false:true;
-    		keyisNumeric === true?extended[index++] = val[key]:extended[key] = val[key];
-    	}
-    	for(let key in ery)
-    	{
-    		keyisNumeric = parseInt(key).toString() === "NaN"?false:true;
-    		let bri = JSON.parse(JSON.stringify(ery))
-    		if(typeof bri[key] == "object")
-    		{
-    			try
-    			{
-    				let tmp = this.extend(extended[key], ery[key])
-    				keyisNumeric === true?extended[index++] = tmp:extended[key] = tmp;
-    			}catch(err)
-    			{
-    				keyisNumeric === true?extended[index++] = ery[key]:extended[key] = ery[key];
-    			}
-    		}	
-    		else keyisNumeric === true?extended[index++] = ery[key]:extended[key] = ery[key];
-    	}
+	extend(val, ery) {
+		let extended = {}
+		let index = 0;
+		let keyisNumeric = true;
+		for (let key in val) {
+			keyisNumeric = parseInt(key).toString() === "NaN" ? false : true;
+			keyisNumeric === true ? extended[index++] = val[key] : extended[key] = val[key];
+		}
+		for (let key in ery) {
+			keyisNumeric = parseInt(key).toString() === "NaN" ? false : true;
+			let bri = JSON.parse(JSON.stringify(ery))
+			if (typeof bri[key] == "object") {
+				try {
+					let tmp = this.extend(extended[key], ery[key])
+					keyisNumeric === true ? extended[index++] = tmp : extended[key] = tmp;
+				} catch (err) {
+					keyisNumeric === true ? extended[index++] = ery[key] : extended[key] = ery[key];
+				}
+			} else keyisNumeric === true ? extended[index++] = ery[key] : extended[key] = ery[key];
+		}
 
 
-    	return extended;
-    }
+		return extended;
+	}
 
-    join(obj, joiner)
-    {
-    	let joined = "";
-    	let count = 0
-    	for(let i in obj)
-    	{
-    		if(count === 0)joined = obj[i];
-    		else joined += joiner+obj[i];
-    		count++
-    	}
-    	return joined;
-    }
+	join(obj, joiner) {
+		let joined = "";
+		let count = 0
+		for (let i in obj) {
+			if (count === 0) joined = obj[i];
+			else joined += joiner + obj[i];
+			count++
+		}
+		return joined;
+	}
 
 }
 
-class abstractWorld
-{
-	constructor()
-	{
-		
+class abstractWorld {
+	constructor() {
+
 	}
 
-	destroy(callback)
-	{
-		let self = this		
+	destroy(callback) {
+		let self = this
 		self.Familyfe.MongoModels.collection = self.Familyfe.collection
 		self.Familyfe.MongoModels.deleteMany(callback);
 	}
 }
 
 
-class abstractProfile extends abstractWorld
-{
-	constructor()
-	{
+class abstractProfile extends abstractWorld {
+	constructor() {
 		super();
 	}
 
 }
 
 
-class Profile extends abstractProfile
-{
+class Profile extends abstractProfile {
 	constructor(sequelize) {
 		super()
 		let self = this;
 		self.sequelize = sequelize
-		self.socialLogins = [
-			{model: self.sequelize.models.Github},
-			{model: self.sequelize.models.Google},
-			{model: self.sequelize.models.Facebook},
-			{model:self.sequelize.models.Twitter}
+		self.socialLogins = [{
+				model: self.sequelize.models.Github
+			},
+			{
+				model: self.sequelize.models.Google
+			},
+			{
+				model: self.sequelize.models.Facebook
+			},
+			{
+				model: self.sequelize.models.Twitter
+			}
 		]
 	}
 
-	async add(profile)
-	{
+	async add(profile) {
 		let self = this;
 		let [err, care, dontcare] = [];
-		let thisProfile = {...profile}
-		for(const inner in thisProfile){
+		let thisProfile = {
+			...profile
+		}
+		for (const inner in thisProfile) {
 			let parts = inner.split(' ')
-			if(parts.length > 1){
+			if (parts.length > 1) {
 				let toupper = parts[1].charAt(0).toUpperCase() + parts[1].slice(1)
-				thisProfile[parts[0]] === undefined? thisProfile[parts[0]] = {}:thisProfile[parts[0]][toupper] = thisProfile[inner];
+				thisProfile[parts[0]] === undefined ? thisProfile[parts[0]] = {} : thisProfile[parts[0]][toupper] = thisProfile[inner];
 				thisProfile[parts[0]][toupper] = thisProfile[inner]
 
 			}
 		}
 
 		let profiles = {};
-		for(let key in thisProfile) {
-			if(typeof thisProfile[key] === 'object') {
+		for (let key in thisProfile) {
+			if (typeof thisProfile[key] === 'object') {
 				thisProfile[key].UserUid = thisProfile['uid']
 				profiles[key] = thisProfile[key]
 			}
 		}
 
-		for(let key in profiles) {
-			;[err, care] = await to(self.sequelize.models[key.slice(0, -1)].create(profiles[key]))
+		for (let key in profiles) {
+			;
+			[err, care] = await to(self.sequelize.models[key.slice(0, -1)].create(profiles[key]))
 		}
 
-		if(err) {
-			let {a} = err.message || err.msg
-			return Promise.reject({msg:err.msg||err.errors[0].message||err.message||err, code:err.code||422, status:422})
+		if (err) {
+			let {
+				a
+			} = err.message || err.msg
+			return Promise.reject({
+				msg: err.msg || err.errors[0].message || err.message || err,
+				code: err.code || 422,
+				status: 422
+			})
 		}
 		return JSON.parse(JSON.stringify(care));
 	}
 
-	async updateEmail(profile)
-	{
+	async updateEmail(profile) {
 		let self = this;
 		let [err, care, dontcare] = [];
-		let thisProfile = {...profile}
-		for(const inner in thisProfile){
+		let thisProfile = {
+			...profile
+		}
+		for (const inner in thisProfile) {
 			let parts = inner.split(' ')
-			if(parts.length > 1){
+			if (parts.length > 1) {
 				let toupper = parts[1].charAt(0).toUpperCase() + parts[1].slice(1)
-				thisProfile[parts[0]] === undefined? thisProfile[parts[0]] = {}:thisProfile[parts[0]][toupper] = thisProfile[inner];
+				thisProfile[parts[0]] === undefined ? thisProfile[parts[0]] = {} : thisProfile[parts[0]][toupper] = thisProfile[inner];
 				thisProfile[parts[0]][toupper] = thisProfile[inner]
 
 			}
 		}
 
 		let profiles = {};
-		for(let key in thisProfile) {
-			if(typeof thisProfile[key] === 'object') {
+		for (let key in thisProfile) {
+			if (typeof thisProfile[key] === 'object') {
 				thisProfile[key].UserUid = thisProfile['uid']
 				profiles[key] = thisProfile[key]
 			}
 		}
 
 		let uid;
-		for(let key in profiles) {
+		for (let key in profiles) {
 			let model = key.slice(0, -1)
-			uid = profiles[key].UserUid
-			;[err, care] = await to(self.sequelize.models[model].update(profiles[key], {where: {UserUid:profiles[key].UserUid, Email:profiles[key].Oldemail}}))
+			uid = profiles[key].UserUid;
+			[err, care] = await to(self.sequelize.models[model].update(profiles[key], {
+				where: {
+					UserUid: profiles[key].UserUid,
+					Email: profiles[key].Oldemail
+				}
+			}))
 			// console.log(care)
 		}
 
 		// ;[err, care] = await to(self.sequelize.models.Person.findOne({where: {uid:uid}} ))
-		if(err) {
-			let {a} = err.message || err.msg
-			return Promise.reject({msg:err.msg||err.errors[0].message||err.message||err, code:err.code||422, status:422})
+		if (err) {
+			let {
+				a
+			} = err.message || err.msg
+			return Promise.reject({
+				msg: err.msg || err.errors[0].message || err.message || err,
+				code: err.code || 422,
+				status: 422
+			})
 		}
 		return JSON.parse(JSON.stringify(care));
 	}
 
-	async dropEmail(profile)
-	{
+	async dropEmail(profile) {
 		let self = this;
 		let [err, care, dontcare] = [];
-		let thisProfile = {...profile}
-		for(const inner in thisProfile){
+		let thisProfile = {
+			...profile
+		}
+		for (const inner in thisProfile) {
 			let parts = inner.split(' ')
-			if(parts.length > 1){
+			if (parts.length > 1) {
 				let toupper = parts[1].charAt(0).toUpperCase() + parts[1].slice(1)
-				thisProfile[parts[0]] === undefined? thisProfile[parts[0]] = {}:thisProfile[parts[0]][toupper] = thisProfile[inner];
+				thisProfile[parts[0]] === undefined ? thisProfile[parts[0]] = {} : thisProfile[parts[0]][toupper] = thisProfile[inner];
 				thisProfile[parts[0]][toupper] = thisProfile[inner]
 
 			}
 		}
 
 		let profiles = {};
-		for(let key in thisProfile) {
-			if(typeof thisProfile[key] === 'object') {
+		for (let key in thisProfile) {
+			if (typeof thisProfile[key] === 'object') {
 				thisProfile[key].UserUid = thisProfile['uid']
 				profiles[key] = thisProfile[key]
 			}
 		}
 
 		let uid;
-		for(let key in profiles) {
+		for (let key in profiles) {
 			let model = key.slice(0, -1)
-			uid = profiles[key].UserUid
-			;[err, care] = await to(self.sequelize.models[model].destroy({where: {UserUid:profiles[key].UserUid, Email:profiles[key].Oldemail}}))
+			uid = profiles[key].UserUid;
+			[err, care] = await to(self.sequelize.models[model].destroy({
+				where: {
+					UserUid: profiles[key].UserUid,
+					Email: profiles[key].Oldemail
+				}
+			}))
 			// console.log(care)
 		}
 
-		if(err) {
-			let {a} = err.message || err.msg
-			return Promise.reject({msg:err.msg||err.errors[0].message||err.message||err, code:err.code||422, status:422})
+		if (err) {
+			let {
+				a
+			} = err.message || err.msg
+			return Promise.reject({
+				msg: err.msg || err.errors[0].message || err.message || err,
+				code: err.code || 422,
+				status: 422
+			})
 		}
 		return JSON.parse(JSON.stringify(care));
 	}
@@ -289,22 +304,22 @@ class Profile extends abstractProfile
 }
 
 
-class abstractPerson extends abstractWorld
-{
-	constructor()
-	{
+class abstractPerson extends abstractWorld {
+	constructor() {
 		super();
 	}
 
-	expandPerson(person){
-		let thisPerson = {...person}
-		for(const inner in person){
+	expandPerson(person) {
+		let thisPerson = {
+			...person
+		}
+		for (const inner in person) {
 			// console.log(inner)
 			let parts = inner.split(' ')
-			if(parts.length > 1){
-				thisPerson[parts[0]] === undefined? thisPerson[parts[0]] = {}:thisPerson[parts[0]][parts[1].charAt(0).toUpperCase() + parts[1].slice(1)] = person[inner];
+			if (parts.length > 1) {
+				thisPerson[parts[0]] === undefined ? thisPerson[parts[0]] = {} : thisPerson[parts[0]][parts[1].charAt(0).toUpperCase() + parts[1].slice(1)] = person[inner];
 				thisPerson[parts[0]][parts[1].charAt(0).toUpperCase() + parts[1].slice(1)] = person[inner]
-			
+
 
 			}
 		}
@@ -312,20 +327,27 @@ class abstractPerson extends abstractWorld
 	}
 }
 
-class Person extends abstractPerson
-{
-	constructor(sequelize)
-	{
+class Person extends abstractPerson {
+	constructor(sequelize) {
 		super();
 		let self = this;
 		self.attributes = ['uid', 'Name', 'Email', 'IsActive']
 		self.sequelize = sequelize
-		self.socialLogins = [
-			{model: self.sequelize.models.Github},
-			{model: self.sequelize.models.Google},
-			{model: self.sequelize.models.Facebook},
-			{model:self.sequelize.models.Telephone},
-			{model:self.sequelize.models.Twitter}
+		self.socialLogins = [{
+				model: self.sequelize.models.Github
+			},
+			{
+				model: self.sequelize.models.Google
+			},
+			{
+				model: self.sequelize.models.Facebook
+			},
+			{
+				model: self.sequelize.models.Telephone
+			},
+			{
+				model: self.sequelize.models.Twitter
+			}
 		]
 		self.Family = new Family(sequelize)
 
@@ -333,46 +355,43 @@ class Person extends abstractPerson
 
 	}
 
-	addEmails(person, Emails)
-	{
+	addEmails(person, Emails) {
 		let self = this;
 		let emails = person.Contacts.Email
 		let newEmails = {}
 		let emailcount = Objlen(emails)
 		let j = 0;
-		for(let i in emails)newEmails[j++] = emails[i];
+		for (let i in emails) newEmails[j++] = emails[i];
 
 		let emailsToAdd = {}
-		if(typeof Emails == "object")
-			for(let i in Emails)newEmails[j++] = Emails[i];
+		if (typeof Emails == "object")
+			for (let i in Emails) newEmails[j++] = Emails[i];
 		else
-			if(typeof Emails == "string")
-				newEmails[j] = Emails;
+		if (typeof Emails == "string")
+			newEmails[j] = Emails;
 
 		person.Contacts.Email = newEmails;
 		return person
 	}
 
-	setAttributes(person)
-	{
+	setAttributes(person) {
 
 		let self = this
-		person.Username = (person.Username !== null && person.Username !== undefined)?sentenceCase(person.Username):person.Email.toLowerCase();
-        person.Email = person.Email.toLowerCase();
-        person.Gender = sentenceCase(person.Gender);
-        person.Name = {
-            first: (person.Name.split(" ")[0] !== undefined)?sentenceCase(person.Name.split(" ")[0]):"",
-            middle: (person.Name.split(" ")[1] !== undefined)?sentenceCase(person.Name.split(" ")[1]):"",
-            last: (person.Name.split(" ")[2] !== undefined)?sentenceCase(person.Name.split(" ")[2]):"",
-            other: (person.Name.split(" ")[3] !== undefined)?sentenceCase(person.Name.split(" ")[3]):"",
-        }
-        person = self.addEmails(person, [person.Email])
-        self.Attributes = person
+		person.Username = (person.Username !== null && person.Username !== undefined) ? sentenceCase(person.Username) : person.Email.toLowerCase();
+		person.Email = person.Email.toLowerCase();
+		person.Gender = sentenceCase(person.Gender);
+		person.Name = {
+			first: (person.Name.split(" ")[0] !== undefined) ? sentenceCase(person.Name.split(" ")[0]) : "",
+			middle: (person.Name.split(" ")[1] !== undefined) ? sentenceCase(person.Name.split(" ")[1]) : "",
+			last: (person.Name.split(" ")[2] !== undefined) ? sentenceCase(person.Name.split(" ")[2]) : "",
+			other: (person.Name.split(" ")[3] !== undefined) ? sentenceCase(person.Name.split(" ")[3]) : "",
+		}
+		person = self.addEmails(person, [person.Email])
+		self.Attributes = person
 		return person
 	}
 
-	fullName()
-	{
+	fullName() {
 		let self = this
 		let fullName = self.familyfe.join(self.Attributes.Name, " ")
 		self.Attributes.name = fullName
@@ -383,78 +402,115 @@ class Person extends abstractPerson
 		return fullName
 	}
 
-	addFamily(family)
-	{
+	addFamily(family) {
 		let self = this
 		let familyid = family._id;
-		let newFamily = {Families:{0:familyid}}
+		let newFamily = {
+			Families: {
+				0: familyid
+			}
+		}
 		let person = self.familyfe.extend(self.Attributes, newFamily)
 		self.Attributes = person;
 		return person;
 	}
 
-	save(callback)
-	{
+	save(callback) {
 		let self = this
-		let person = self.Attributes		 
+		let person = self.Attributes
 		self.Familyfe.MongoModels.collection = self.Familyfe.collection
-		self.Familyfe.MongoModels.deleteOne({_id:person._id}, function(err, results){
+		self.Familyfe.MongoModels.deleteOne({
+			_id: person._id
+		}, function (err, results) {
 			self.Familyfe.MongoModels.insertOne(person, callback);
 		});
-		
+
 	}
 
-	async common(options, action)
-	{
+	async common(options, action) {
 		let self = this;
 		let [err, care, dontcare] = [];
 		let githubOptions = {
 			model: self.sequelize.models.Github
 		}
 
-		if(options.github !== undefined) {
+		if (options.github !== undefined) {
 			githubOptions.where = Object.assign({}, options.github);
-			delete options.github 
+			delete options.github
 		}
 
 		// let mainOptions = { attributes:self.attributes,
-		let mainOptions = { 
-                include: 
-			 	 		[
-			 	 			githubOptions,
-			 	 			{model:self.sequelize.models.Google},
-			 	 			{model:self.sequelize.models.Facebook},
-							{model:self.sequelize.models.Emailprofile},
-							{model:self.sequelize.models.Telephone},
-							{model:self.sequelize.models.Twitter}
-			 	 		]
-        }
+		let mainOptions = {
+			include: [
+				githubOptions,
+				{
+					model: self.sequelize.models.Google
+				},
+				{
+					model: self.sequelize.models.Facebook
+				},
+				{
+					model: self.sequelize.models.Emailprofile
+				},
+				{
+					model: self.sequelize.models.Telephone
+				},
+				{
+					model: self.sequelize.models.Twitter
+				}
+			]
+		}
 
-        if(Object.keys(options).length > 0)mainOptions.where = options
+		if (Object.keys(options).length > 0) mainOptions.where = options
 
-		switch(action)
-		{
+		switch (action) {
 			case "which":
-				;[err, care] = await to(self.sequelize.models.Person.findOne(mainOptions ))
+				;
+				[err, care] = await to(self.sequelize.models.Person.findOne(mainOptions))
 				break;
 			case "whichwithPwd":
 				self.attributes.push('Password')
 				// console.log(options)
-				;[err, care] = await to(self.sequelize.models.Person.findOne({where: options, attributes:self.attributes} ))
+				;
+				[err, care] = await to(self.sequelize.models.Person.findOne({
+					where: options,
+					attributes: self.attributes
+				}))
 				break;
 			case "update":
 				options = self.expandPerson(options)
 				// console.log(options)
-				;[err, care] = await to(self.sequelize.models.Person.update(options, {where: {uid:options.uid}, fields:options}, mainOptions))
-				;[err, care] = await to(self.sequelize.models.Emailprofile.update(options.Emailprofiles, {where: {	UserUid:options.uid, Email: options.Emailprofiles.Oldemail}, fields:options}, mainOptions))
+				;
+				[err, care] = await to(self.sequelize.models.Person.update(options, {
+					where: {
+						uid: options.uid
+					},
+					fields: options
+				}, mainOptions));
+				[err, care] = await to(self.sequelize.models.Emailprofile.update(options.Emailprofiles, {
+					where: {
+						UserUid: options.uid,
+						Email: options.Emailprofiles.Oldemail
+					},
+					fields: options
+				}, mainOptions))
 				// ;[err, care] = await to(self.sequelize.models.Person.findOne(mainOptions));
 				break;
 			case "destroy":
-				;[err, care] = await to(self.sequelize.models.Person.destroy( {where: {uid:options.uid}}))
+				;
+				[err, care] = await to(self.sequelize.models.Person.destroy({
+					where: {
+						uid: options.uid
+					}
+				}))
 				break;
-				
+
 		}
-		if(err)return Promise.reject({msg:err.msg||err, code:err.code||422, status:422})
+		if (err) return Promise.reject({
+			msg: err.msg || err,
+			code: err.code || 422,
+			status: 422
+		})
 		care = care || {}
 		// return JSON.parse(JSON.stringify(care))
 		return care
@@ -465,60 +521,88 @@ class Person extends abstractPerson
 	 */
 	async which(options) {
 		let self = this;
-		let [err, care, dontcare] = [];
-		;[err, care] = await to(self.common(options, "which"))
-		if(err)return Promise.reject({msg:err.msg||err, code:err.code||422, status:422})
+		let [err, care, dontcare] = [];;
+		[err, care] = await to(self.common(options, "which"))
+		if (err) return Promise.reject({
+			msg: err.msg || err,
+			code: err.code || 422,
+			status: 422
+		})
 		return care;
 	}
 
 	async whichwithPwd(options) {
 		let self = this;
-		let [err, care, dontcare] = [];
-		;[err, care] = await to(self.common(options, "whichwithPwd"))
-		if(err)return Promise.reject({msg:err.msg||err, code:err.code||422, status:422})
+		let [err, care, dontcare] = [];;
+		[err, care] = await to(self.common(options, "whichwithPwd"))
+		if (err) return Promise.reject({
+			msg: err.msg || err,
+			code: err.code || 422,
+			status: 422
+		})
 		return care;
 	}
 
 	async update(options) {
 		let self = this;
-		let [err, care, dontcare] = [];
-		;[err, care] = await to(self.common(options, "update"))
-		if(err)return Promise.reject({msg:err.msg||err, code:err.code||422, status:422})
+		let [err, care, dontcare] = [];;
+		[err, care] = await to(self.common(options, "update"))
+		if (err) return Promise.reject({
+			msg: err.msg || err,
+			code: err.code || 422,
+			status: 422
+		})
 		return care;
+	}
+
+	async update_v1(data, where) {
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Person.update(data, {
+			where: where,
+			// individualHooks: true
+		}))
+		if (err) throw (err)
+		if (care === null || care === undefined) return {}
+		return care[0] || 0
 	}
 
 	async destroy(options) {
 		let self = this;
-		let [err, care, dontcare] = [];
-		;[err, care] = await to(self.common(options, "destroy"))
-		if(err)return Promise.reject({msg:err.msg||err, code:err.code||422, status:422})
+		let [err, care, dontcare] = [];;
+		[err, care] = await to(self.common(options, "destroy"))
+		if (err) return Promise.reject({
+			msg: err.msg || err,
+			code: err.code || 422,
+			status: 422
+		})
 		return care;
 	}
 
 
-	async beget(person)
-	{
+	async beget(person) {
 		let self = this;
 		let [err, care, dontcare] = [];
 		// try{
-		let thisPerson = {...person}
-		for(const inner in person){
+		let thisPerson = {
+			...person
+		}
+		for (const inner in person) {
 			// console.log(inner)
 			let parts = inner.split(' ')
-			if(parts.length > 1){
+			if (parts.length > 1) {
 				let toupper = parts[1].charAt(0).toUpperCase() + parts[1].slice(1)
-				if(toupper === 'Uid') {
+				if (toupper === 'Uid') {
 					toupper = 'uid'
 				}
-				thisPerson[parts[0]] === undefined? thisPerson[parts[0]] = {}:thisPerson[parts[0]][toupper] = person[inner];
+				thisPerson[parts[0]] === undefined ? thisPerson[parts[0]] = {} : thisPerson[parts[0]][toupper] = person[inner];
 				thisPerson[parts[0]][toupper] = person[inner]
 
 			}
 		}
-		
-		;[err, care] = await to(self.sequelize.models.Person.create(thisPerson,{
-			include: [
-				{
+
+		;
+		[err, care] = await to(self.sequelize.models.Person.create(thisPerson, {
+			include: [{
 					model: self.sequelize.models.Emailprofile
 				},
 				{
@@ -527,13 +611,18 @@ class Person extends abstractPerson
 				{
 					model: self.sequelize.models.Github
 				}
-		]
+			]
 		}))
 
-		if(err) {
-			console.log(err)
-			let {a} = err.message || err.msg
-			return Promise.reject({msg:err.msg||err.errors[0].message||err.message||err, code:err.code||422, status:422})
+		if (err) {
+			let {
+				a
+			} = err.message || err.msg
+			return Promise.reject({
+				msg: err.msg || err.errors[0].message || err.message || err,
+				code: err.code || 422,
+				status: 422
+			})
 		}
 		let uid = care.dataValues.uid
 		// console.log(uid)
@@ -543,14 +632,15 @@ class Person extends abstractPerson
 		// console.log(err)
 
 		let Families = person.Families || [];
-		let promises = Families.map(function(family){ return self.Family.addMember(family, uid)})
-		;[err1, care1] = await to(Promise.all(promises));
+		let promises = Families.map(function (family) {
+			return self.Family.addMember(family, uid)
+		});
+		[err1, care1] = await to(Promise.all(promises));
 		// console.log(care1)
 		return JSON.parse(JSON.stringify(care));
 	}
 
-	async begetIn(person, place)	/*try doing this in one step*/
-	{
+	async begetIn(person, place) /*try doing this in one step*/ {
 		let self = this;
 		let [err, care, dontcare] = [];
 
@@ -564,7 +654,8 @@ class Person extends abstractPerson
 		}
 
 		// self.sequelize.models.Person.Github = self.sequelize.models.Github.belongsTo(self.sequelize.models.Person)
-		;[err, care] = await to(self.sequelize.models.Person.create(firstPerson))
+		;
+		[err, care] = await to(self.sequelize.models.Person.create(firstPerson))
 
 		// console.log(person)
 		// console.log("Now going to create user....")
@@ -572,90 +663,104 @@ class Person extends abstractPerson
 		// console.log(err)
 		// console.log(care)
 
-		if(err) {
-			let {a} = err.message || err.msg
-			return Promise.reject({msg:err.msg||err.errors[0].message||err.message||err, code:err.code||422, status:422})
+		if (err) {
+			let {
+				a
+			} = err.message || err.msg
+			return Promise.reject({
+				msg: err.msg || err.errors[0].message || err.message || err,
+				code: err.code || 422,
+				status: 422
+			})
 		}
 
 		let uid = care.dataValues.uid
 		let otherPerson = {}
-		switch(place) {
+		switch (place) {
 			case "github":
 				otherPerson.GithubUid = care.dataValues.uid;
 				otherPerson.gituid = person.id;
-				otherPerson.Name = "had some name...." ;
-				;[err, care] = await to(self.sequelize.models.Github.create(otherPerson))
+				otherPerson.Name = "had some name....";;
+				[err, care] = await to(self.sequelize.models.Github.create(otherPerson))
 				break;
 		}
 
 		return JSON.parse(JSON.stringify(care));
 	}
 
-	identify(options, callback)
-	{
+	identify(options, callback) {
 		let self = this;
-		options.Email === undefined? options.Email = "":false;
+		options.Email === undefined ? options.Email = "" : false;
 		let errors = {}
-		validator.isEmpty(options.Email)===true?errors["Email"] = {err:"Please enter email to log in."}:false;;
-		let len = Objlen(errors)		
-		if(len > 0)	return callback(errors, false)
+		validator.isEmpty(options.Email) === true ? errors["Email"] = {
+			err: "Please enter email to log in."
+		} : false;;
+		let len = Objlen(errors)
+		if (len > 0) return callback(errors, false)
 
 		self.familyfe.MongoModels.collection = self.familyfe.collection
-		self.familyfe.MongoModels.findOne({Email:options.Email}, function(err, user){
-			if(err || user === null || Objlen(user) < 1)
-			{
-				errors["email"] = {err:"Email not found"};
+		self.familyfe.MongoModels.findOne({
+			Email: options.Email
+		}, function (err, user) {
+			if (err || user === null || Objlen(user) < 1) {
+				errors["email"] = {
+					err: "Email not found"
+				};
 				return callback(errors, false);
 			}
-			self.__comparepassword({user:user, Password:options.Password}, function(err, isMatch){
-				if(err || isMatch === false)
-				{
-					errors["password"] = {err:"Wrong password."};
+			self.__comparepassword({
+				user: user,
+				Password: options.Password
+			}, function (err, isMatch) {
+				if (err || isMatch === false) {
+					errors["password"] = {
+						err: "Wrong password."
+					};
 					return callback(errors, false)
 				}
-				self.isActive({user:user}, function(err, active){
-					if(active === false)
-					{
-						errors["person"] =  {err:"Person is disabled. Please activate."};
+				self.isActive({
+					user: user
+				}, function (err, active) {
+					if (active === false) {
+						errors["person"] = {
+							err: "Person is disabled. Please activate."
+						};
 						return callback(errors, false)
 					}
 					user.id = user._id;
-					return callback(null, user)//no errors
+					return callback(null, user) //no errors
 				})
 			})
-			
+
 		});
 	}
 
-	__comparepassword(options, callback)
-	{
+	__comparepassword(options, callback) {
 		let password = options.Password,
 			user = options.user;
 		// console.log(options)
 		Async.auto({
-            start: function (dones) {
-                let syspass = JSON.parse(JSON.stringify(user)).Password;
-                Bcrypt.compare(password, syspass,dones);
-            }
-        }, (err, results) => {
+			start: function (dones) {
+				let syspass = JSON.parse(JSON.stringify(user)).Password;
+				Bcrypt.compare(password, syspass, dones);
+			}
+		}, (err, results) => {
 
-        	if(err)return callback(err, false)
-            callback(err, results.start);
-            
-        });
+			if (err) return callback(err, false)
+			callback(err, results.start);
+
+		});
 	}
 
-	isActive(options, callback)
-	{
+	isActive(options, callback) {
 		let user = options.user;
 
 		callback(null, user.IsActive);
 	}
 
-	async getApps(personId)
-	{
-		let self = this
-		,[err, care] = [];
+	async getApps(personId) {
+		let self = this,
+			[err, care] = [];
 
 		// ;[err, care] = await to(self.sequelize.models.App.findAll(
 		// 	{
@@ -689,116 +794,110 @@ class Person extends abstractPerson
 		// 	}
 		// ));
 
-		;[err, care] = await to(self.sequelize.models.Family.findAll(
-			{
-				include: [
-					{
-						model: self.sequelize.models.FamilyMember
-						,attributes: []
-						, where: {
-							PersonUid:personId
-						}
-					},
+		;
+		[err, care] = await to(self.sequelize.models.Family.findAll({
+			include: [{
+					model: self.sequelize.models.FamilyMember,
+					attributes: [],
+					where: {
+						PersonUid: personId
+					}
+				},
 				{
 					model: self.sequelize.models.InstalledApp,
 					// where:{
 					// 	FamilyFamilyId:family
 					// },
 					attributes: ["InstalledAppId"],
-					include: 
-						[
-							{
-								model:self.sequelize.models.App,
-								// where: {AppName: app},
-								attributes: ['AppId', 'AppName'],
-								include:[
-									{
-										model:self.sequelize.models.Role,
-										// where:{Role: role},
-										attributes: ['RoleId', 'Role']
-								}]
-							}
-						]
+					include: [{
+						model: self.sequelize.models.App,
+						// where: {AppName: app},
+						attributes: ['AppId', 'AppName'],
+						include: [{
+							model: self.sequelize.models.Role,
+							// where:{Role: role},
+							attributes: ['RoleId', 'Role']
+						}]
+					}]
 				}
-				]
-			}
-		))
-		if(err) throw err
+			]
+		}))
+		if (err) throw err
 		// console.log(care[0].dataValues.InstalledApps[0].dataValues.App.dataValues.Roles)
-		if(care === null) return {}
+		if (care === null) return {}
 		return care;
 	}
-	async hasRole(role, app, personId, family)
-	{
-		let self = this
-		,[err, care] = [];
-		;[err, care] = await to(self.sequelize.models.Family.findAll(
-			{
-				include: [
-					{
-						model: self.sequelize.models.FamilyMember
-						, where: {
-							PersonUid:personId
-						}
-					},
+	async hasRole(role, app, personId, family) {
+		let self = this,
+			[err, care] = [];;
+		[err, care] = await to(self.sequelize.models.Family.findAll({
+			include: [{
+					model: self.sequelize.models.FamilyMember,
+					where: {
+						PersonUid: personId
+					}
+				},
 				{
 					model: self.sequelize.models.InstalledApp,
-					where:{
-						FamilyFamilyId:family
+					where: {
+						FamilyFamilyId: family
 					},
 					attributes: ["InstalledAppId"],
-					include: 
-						[
-							{
-								model:self.sequelize.models.App,
-								where: {AppName: app},
-								attributes: ['AppId', 'AppName'],
-								include:[
-									{
-										model:self.sequelize.models.Role,
-										where:{Role: role},
-										attributes: ['RoleId', 'Role']
-								}]
-							}
-						]
+					include: [{
+						model: self.sequelize.models.App,
+						where: {
+							AppName: app
+						},
+						attributes: ['AppId', 'AppName'],
+						include: [{
+							model: self.sequelize.models.Role,
+							where: {
+								Role: role
+							},
+							attributes: ['RoleId', 'Role']
+						}]
+					}]
 				}
-				]
-			}
-		))
-		if(err) throw err
-		// console.log(care[0].dataValues.InstalledApps[0].dataValues.App.dataValues.Roles)
-		if(care === null) return {}
+			]
+		}))
+		if (err) throw err
+		if (care === null) return {}
 		return JSON.parse(JSON.stringify(care));
+	}
+
+	async delete (uid) {
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Person.destroy({
+			where: {uid:uid}
+		}));
+		if (err) throw (err)
+		if (care === null) return {}
+		return care
 	}
 
 }
 
-class abstractFamily extends abstractWorld
-{
-	constructor()
-	{
+class abstractFamily extends abstractWorld {
+	constructor() {
 		super();
 	}
 
-	extendFamilyRoles(oldRoles, NewRoles)
-	{
+	extendFamilyRoles(oldRoles, NewRoles) {
 		let tmpobj = {}
 		let roles = []
-		for(let i in oldRoles)tmpobj[oldRoles[i]] = true;
-		for(let i in NewRoles)tmpobj[NewRoles[i]] = true;
-		for(let role in tmpobj)roles.push(role)
+		for (let i in oldRoles) tmpobj[oldRoles[i]] = true;
+		for (let i in NewRoles) tmpobj[NewRoles[i]] = true;
+		for (let role in tmpobj) roles.push(role)
 		return roles;
 	}
 }
 
-class Family extends abstractFamily
-{
-	constructor(sequelize)
-	{
+class Family extends abstractFamily {
+	constructor(sequelize) {
 		super();
 		let self = this;
 		self.sequelize = sequelize
-		
+
 	}
 
 
@@ -815,76 +914,143 @@ class Family extends abstractFamily
 			if (hierarchyLevel < 2) hierarchyLevel = 2
 			if (parentFamilyId === null) parentFamilyId = 1
 		}
-	    // console.log('going to create..')
-	    let [err, care] = await to(self.sequelize.models.Family.create({
-	    	FamilyName,
-	    	hierarchyLevel,
-	    	parentFamilyId
-	    }))
-	    if (err) throw err;
-	    if (care===null) throw 'Missing familyId'
-	    return care.dataValues.FamilyId;
+		// console.log('going to create..')
+		let [err, care] = await to(self.sequelize.models.Family.create({
+			FamilyName,
+			hierarchyLevel,
+			parentFamilyId
+		}))
+		if (err) throw err;
+		if (care === null) throw 'Missing familyId'
+		return care.dataValues.FamilyId;
 	}
 
 	async getApps(family) {
 		let self = this
-		let [err, care] = [];
-		;[err, care] = await to(self.sequelize.models.InstalledApp.findAll(
-			{
-				where:{
-					FamilyFamilyId:family
-				},
-				attributes: ["InstalledAppId"],
-				include: 
-					[
-						{model:self.sequelize.models.App,
-							attributes: ['AppId', 'AppName'],
-							include:[{model:self.sequelize.models.Role,
-								attributes: ['RoleId', 'Role']
-							}]
-						}
-					]
-			}, 
-		))
+		let [err, care] = [];;
+		[err, care] = await to(self.sequelize.models.InstalledApp.findAll({
+			where: {
+				FamilyFamilyId: family
+			},
+			attributes: ["InstalledAppId"],
+			include: [{
+				model: self.sequelize.models.App,
+				attributes: ['AppId', 'AppName'],
+				include: [{
+					model: self.sequelize.models.Role,
+					attributes: ['RoleId', 'Role']
+				}]
+			}]
+		}, ))
 		let ret = [];
 		// console.log(err)
-		if(err) throw (err)
-		if(care === null) throw "nothing found"
+		if (err) throw (err)
+		if (care === null) throw "nothing found"
 		// console.log(err)
 		// console.log(JSON.stringify(care))
-		for(let i in care)
+		for (let i in care)
 			ret.push(care[i].dataValues)
 		return JSON.parse(JSON.stringify(ret))
 	}
 
+
+
 	async getspecificMemberRoleforFamily(family, specificRole) {
 		let self = this
-		let [err, care] = [];
-		;[err, care] = await to(self.sequelize.models.InstalledApp.findAll(
-			{
-				where:{
-					FamilyFamilyId:family
-				},
-				attributes: ["InstalledAppId"],
-				include: 
-					[
-						{model:self.sequelize.models.App,
-							attributes: ['AppId', 'AppName'],
-							include:[{model:self.sequelize.models.Role,
-								attributes: ['RoleId', 'Role'],
-								where:{Role:specificRole}
-							}]
-						}
-					]
-			}, 
-		))
+		let [err, care] = [];;
+		[err, care] = await to(self.sequelize.models.InstalledApp.findAll({
+			where: {
+				FamilyFamilyId: family
+			},
+			attributes: ["InstalledAppId"],
+			include: [{
+				model: self.sequelize.models.App,
+				attributes: ['AppId', 'AppName'],
+				include: [{
+					model: self.sequelize.models.Role,
+					attributes: ['RoleId', 'Role'],
+					where: {
+						Role: specificRole
+					}
+				}]
+			}]
+		}, ))
 		let ret = [];
 		// console.log(err)
-		if(err) throw (err)
-		if(care === null) throw "nothing found"
+		if (err) throw (err)
+		if (care === null) throw "nothing found"
 		// console.log(err)
 		// console.log(JSON.stringify(care))
-		for(let i in care)
+		for (let i in care)
+			ret.push(care[i].dataValues)
+		return JSON.parse(JSON.stringify(ret))
+	}
+
+	async memberHasRoleinFamilyforApp(app, role, family, uid) {
+		let self = this
+		let [err, care] = [];
+		[err, care] = await to(self.sequelize.models.MemberRole.findOne({
+			include: [{
+					model: self.sequelize.models.Role,
+					where: {
+						Role: role
+					},
+					include: [{
+						model: self.sequelize.models.App,
+						where: app
+					}]
+				},
+				{
+					model: self.sequelize.models.FamilyMember,
+					include: [{
+							model: self.sequelize.models.Family,
+							where: {
+								FamilyId: family
+							}
+						},
+						{
+							model: self.sequelize.models.Person,
+							where: {
+								uid
+							}
+						}
+					]
+				}
+			]
+		}, ))
+		if (care === null) return false
+		return true
+	}
+
+
+	async getspecificMemberRoleforFamilyforApp(family, specificRole, app) {
+		let self = this
+		let [err, care] = [];;
+		[err, care] = await to(self.sequelize.models.InstalledApp.findOne({
+			where: {
+				FamilyFamilyId: family
+			},
+			attributes: ["InstalledAppId"],
+			include: [{
+				model: self.sequelize.models.App,
+				where: app,
+				attributes: ['AppId', 'AppName'],
+				include: [{
+					model: self.sequelize.models.Role,
+					attributes: ['RoleId', 'Role'],
+					where: {
+						Role: specificRole
+					}
+				}]
+			}]
+		}, ))
+		let ret = [];
+		// console.log(err)
+		if (err) throw (err)
+		if (care === null) return false
+		// console.log(err)
+		// console.log(JSON.stringify(care))
+		for (let i in care)
 			ret.push(care[i].dataValues)
 		return JSON.parse(JSON.stringify(ret))
 	}
@@ -919,12 +1085,12 @@ class Family extends abstractFamily
 	// 				delete self.Attributes.Roles
 	// 				self.Attributes = self.familyfe.extend(self.Attributes,options)
 	// 				self.addMembers(function(err,results){return callback(null, self.Attributes)})
-					
+
 	// 			});
-					
+
 	// 		}
 	// 		else return callback(null, options)
-			
+
 	// 	})
 	// }
 
@@ -945,7 +1111,7 @@ class Family extends abstractFamily
 	// 			});
 	// 		})
 	// 	}, function(err) {
-     	
+
 	// 		callback()
 	// 	})
 	// }
@@ -953,24 +1119,22 @@ class Family extends abstractFamily
 	async addMember(family, member) {
 		let self = this
 		let [err, care] = []
-		
-		;[err, care] = await to(self.sequelize.models.FamilyMember.findOne({where:
-			{
+
+		;
+		[err, care] = await to(self.sequelize.models.FamilyMember.findOne({
+			where: {
 				"PersonUid": member,
 				"FamilyFamilyId": family
 			}
 		}))
 
-		if(err) throw (err);
-		if(care === null)
-		{
-			[err, care] = await to(self.sequelize.models.FamilyMember.create(
-			{
+		if (err) throw (err);
+		if (care === null) {
+			[err, care] = await to(self.sequelize.models.FamilyMember.create({
 				"PersonUid": member,
 				"FamilyFamilyId": family
-			}
-			));
-			if(err) throw (err)
+			}));
+			if (err) throw (err)
 		}
 		return care;
 	}
@@ -978,60 +1142,64 @@ class Family extends abstractFamily
 	async getMembers(family) {
 		let self = this
 		let [err, care] = []
-		
-		;[err, care] = await to(self.sequelize.models.FamilyMember.findAll({where:
-			{
+
+		;
+		[err, care] = await to(self.sequelize.models.FamilyMember.findAll({
+			where: {
 				"FamilyFamilyId": family
 			},
-			attributes:['FamilyMemberId', 'PersonUid']
+			attributes: ['FamilyMemberId', 'PersonUid']
 		}))
 
-		if(err) throw (err);
-		if(care === null) throw err ("nothing found")
-		
+		if (err) throw (err);
+		if (care === null) throw err("nothing found")
+
 		let ret = [];
-		for(let i in care) {
+		for (let i in care) {
 			ret.push(care[i].dataValues)
 		}
-		
+
 		return JSON.parse(JSON.stringify(ret));
 	}
 
 	async getMember(family, Person) {
 		let self = this
 		let [err, care] = []
-		
-		;[err, care] = await to(self.sequelize.models.FamilyMember.findOne({where:
-			{
+
+		;
+		[err, care] = await to(self.sequelize.models.FamilyMember.findOne({
+			where: {
 				"FamilyFamilyId": family,
 				"PersonUid": Person
 			},
-			attributes:['FamilyMemberId']
+			attributes: ['FamilyMemberId']
 		}))
 
 
 
-		if(err) throw (err);
-		if(care === null) throw ("nothing found")
-		
+		if (err) throw (err);
+		if (care === null) throw ("nothing found")
+
 		return care.dataValues.FamilyMemberId
 	}
 	async createRoleforMember(member, role) {
 		let self = this;
 		let [err, care] = await to(self.sequelize.models.MemberRole.create({
-			"FamilyMemberFamilyMemberId":member,
-			"RoleRoleId":role
+			"FamilyMemberFamilyMemberId": member,
+			"RoleRoleId": role
 		}))
-		
-		if(err) throw (err)
+
+		if (err) throw (err)
 		return care.dataValues
 	}
 	async createRolesforMember(member, roles) {
 		let self = this;
 		// try{
-		let promises = roles.map( function(role){ return self.createRoleforMember(member, role)})
+		let promises = roles.map(function (role) {
+			return self.createRoleforMember(member, role)
+		})
 		let [err, care] = await to(Promise.all(promises));
-		if(err) throw (err)
+		if (err) throw (err)
 		return care;
 		// }catch(error) {
 		// 	console.log(error)
@@ -1039,54 +1207,51 @@ class Family extends abstractFamily
 	}
 
 
-	async addMembers(family, members)
-	{
+	async addMembers(family, members) {
 		let self = this
 		let [err, care] = [];
 
-		let promises = members.map( function(member) { return self.addMember(member, family); })
-		;[err, care] = await to(Promise.all(promises));
+		let promises = members.map(function (member) {
+			return self.addMember(member, family);
+		});
+		[err, care] = await to(Promise.all(promises));
 		return care;
 	}
 
-	getMemberId(user, callback)
-	{
+	getMemberId(user, callback) {
 		let self = this;
 		let families = user.Families;
 		let personId = user._id;
 		let memberIds = {}
-		Async.each(families, function (familyId, next){ 
+		Async.each(families, function (familyId, next) {
 			self.Familyfe.MongoModels.collection = "FamilyMembers"
-			self.Familyfe.MongoModels.find({familyId:familyId,memberId:personId}, function(err, results){
-				if(err || Objlen(results) < 1)next();
-				else
-				{					
-					for(let i in results)
-					{
+			self.Familyfe.MongoModels.find({
+				familyId: familyId,
+				memberId: personId
+			}, function (err, results) {
+				if (err || Objlen(results) < 1) next();
+				else {
+					for (let i in results) {
 						let memberId = results[i]._id;
 						memberIds[memberId] = familyId;
 					}
 					next();
 				}
 			})
-		}, function(err) {
-     		user.memberIds = memberIds;
+		}, function (err) {
+			user.memberIds = memberIds;
 			callback(err, user);
 		})
 	}
 }
 
-class abstractFamilyMembers extends abstractWorld
-{
-	constructor()
-	{
+class abstractFamilyMembers extends abstractWorld {
+	constructor() {
 		super();
 	}
 }
-class familyMembers extends abstractFamilyMembers
-{
-	constructor()
-	{
+class familyMembers extends abstractFamilyMembers {
+	constructor() {
 		super();
 		let self = this;
 		// self.Familyfe = new familyfe();
@@ -1097,10 +1262,8 @@ class familyMembers extends abstractFamilyMembers
 /*
  * World
  */
-class World extends abstractWorld
-{
-	constructor(sequelize)
-	{
+class World extends abstractWorld {
+	constructor(sequelize) {
 		super();
 		let self = this;
 		self.sequelize = sequelize;
@@ -1108,7 +1271,7 @@ class World extends abstractWorld
 		// self.Families = self.Family = new family;
 		// self.FamilyMembers = self.familyMembers = new familyMembers;
 	}
-	
+
 	/*
 	 * What relation has the world to everyother thing??????
 	 */
@@ -1117,24 +1280,38 @@ class World extends abstractWorld
 		let [err, care, dontcare] = [];
 		// [err, care] = await to(self.sequelize.models.Person.findAll({attributes: self.Person.attributes}))//or user .id
 		[err, care] = await to(self.sequelize.models.Person.findAll({
-			include: 
- 	 		[
- 	 			{model:self.sequelize.models.Github},
- 	 			{model:self.sequelize.models.Google},
- 	 			{model:self.sequelize.models.Facebook},
-				{model:self.sequelize.models.Emailprofile},
-				{model:self.sequelize.models.Telephone},
-				{model:self.sequelize.models.Twitter}
- 	 		]
-		}))//or user .id
-		if(err)return Promise.reject({msg:err.msg||err, code:err.code||422, status:422})
+			include: [{
+					model: self.sequelize.models.Github
+				},
+				{
+					model: self.sequelize.models.Google
+				},
+				{
+					model: self.sequelize.models.Facebook
+				},
+				{
+					model: self.sequelize.models.Emailprofile
+				},
+				{
+					model: self.sequelize.models.Telephone
+				},
+				{
+					model: self.sequelize.models.Twitter
+				}
+			]
+		})) //or user .id
+		if (err) return Promise.reject({
+			msg: err.msg || err,
+			code: err.code || 422,
+			status: 422
+		})
 		care = care || {}
 		return JSON.parse(JSON.stringify(care))
 	}
 
 	async destroyWorld() {
 		return true; // records have been deleted already
-		
+
 		// let self = this;
 		// // 
 		// let model, models;
@@ -1166,23 +1343,27 @@ class World extends abstractWorld
 
 	}
 
-	async create(adam, callback)
-	{
+	async create(adam, callback) {
 		let [err, care, dontcare] = [];
 		let self = this
 		//self.destroyWorld().catch((err)=>console.log(err)).then(()=>console.log('finished'));
-		;[err, care] = await to(self.destroyWorld());
-		if(err)return Promise.reject({msg:err.mg||err.message||err, code:err.code||1000})
-		;[err, care] = await to(self.Person.beget(adam))
-		if(err)return Promise.reject({msg:err.mg||err.message||err, code:err.code||1000})
+		;
+		[err, care] = await to(self.destroyWorld());
+		if (err) return Promise.reject({
+			msg: err.mg || err.message || err,
+			code: err.code || 1000
+		});
+		[err, care] = await to(self.Person.beget(adam))
+		if (err) return Promise.reject({
+			msg: err.mg || err.message || err,
+			code: err.code || 1000
+		})
 		return care;
 	}
 }
 
-class EmailProfile 
-{
-	constructor(sequelize)
-	{
+class EmailProfile {
+	constructor(sequelize) {
 		// super();
 		let self = this;
 		self.sequelize = sequelize;
@@ -1191,143 +1372,204 @@ class EmailProfile
 		// self.FamilyMembers = self.familyMembers = new familyMembers;
 	}
 
-	async emailActivation (code, toEmail, activationpath) {
+	async emailActivation(code, toEmail, activationpath) {
 		let self = this
-		let {Code, EmailprofileEmailuid} = code,
+		let {
+			Code,
+			EmailprofileEmailuid
+		} = code,
 		data = code;
 		await self.createEmailCode(data)
 
-		let [err, care] = [];
-		;[err, care] = await to(mailer(
-			{
-				from: config.get('/mail/accountsman'),
-				to: toEmail
-			},
-			{
-				subject: 'Account Activation',
-				content: `Please use this code: <b>${Code}</b> to activate your account. Or click on <a href=${activationpath}>this link</a> to active`,
-			}
-			)
-		)
-		if(err) throw (err)
+		let [err, care] = [];;
+		[err, care] = await to(mailer({
+			from: config.get('/mail/accountsman'),
+			to: toEmail
+		}, {
+			subject: 'Account Activation',
+			content: `Please use this code: <b>${Code}</b> to activate your account. Or click on <a href=${activationpath}>this link</a> to active`,
+		}))
+		if (err) throw (err)
 		return care
 	}
 
-	async createEmailCode(data){
+	async createEmailCode(data) {
 		let self = this
 		// await self.removeOldCodes();
 		let [err, care] = await to(self.sequelize.models.EmailCode.create(data));
-		if(err) throw (err)
-		if(care === null) return {}
+		if (err) throw (err)
+		if (care === null) return {}
 		return care
 	}
 
-	async deleteCode(Code){
+	async deleteCode(Code) {
 		let self = this
-		let [err, care] = await to(self.sequelize.models.EmailCode.destroy({where:{Code}}));
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.EmailCode.destroy({
+			where: {
+				Code
+			}
+		}));
+		if (err) throw (err)
+		if (care === null) return {}
 		return care
 	}
 
-	async removeOldCodes(){
-		let self = this
-		, select = {};
+	async removeOldCodes() {
+		let self = this,
+			select = {};
 
-		select['createdAt'] ={lte:moment().subtract(config.get('/CodeTTL'), 'minutes').toDate()}
-		let [err, care] = await to(self.sequelize.models.EmailCode.destroy({where:select}));
-		if(err) throw (err)
-		if(care === null) return {}
+		select['createdAt'] = {
+			lte: moment().subtract(config.get('/CodeTTL'), 'minutes').toDate()
+		}
+		let [err, care] = await to(self.sequelize.models.EmailCode.destroy({
+			where: select
+		}));
+		if (err) throw (err)
+		if (care === null) return {}
 		return care
 	}
-	
+
 	async whichEmailProfile(profile) {
-		
+
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Emailprofile.findOne({where:profile}))
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Emailprofile.findOne({
+			where: profile
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care
 	}
 
 	async whichEmailProfileforCode(code) {
-		
+
 		let self = this
 		let [err, care] = await to(self.sequelize.models.Emailprofile.findOne({
-			include: [
-				{
-					model:self.sequelize.models.EmailCode,
-					where:{Code: code}
+			include: [{
+				model: self.sequelize.models.EmailCode,
+				where: {
+					Code: code
 				}
-			]
+			}]
 		}))
-		if(err) throw (err)
-		if(care === null) return {}
+		if (err) throw (err)
+		if (care === null) return {}
 		return care
 	}
 
 	async whichPersonwithEmailProfile(profile) {
-		
+
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Person.findOne(
-			{
-				
-				include: [
-					{
-						model:self.sequelize.models.Emailprofile,
-						where:profile
-					}
-				]
-			}
-		))
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Person.findOne({
+
+			include: [{
+				model: self.sequelize.models.Emailprofile,
+				where: profile
+			}]
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care
 	}
 
 	async whichPerson(uid, moreAttributes) {
 		let self = this
 		let attributes = {
-			person: ['uid','Name', 'Gender', 'IsActive']
+			person: ['uid', 'Name', 'Gender', 'IsActive']
 		}
 		let [err, care] = await to(self.sequelize.models.Person.findOne({
-			where:{uid},
-			attributes:attributes.person,
-			include: 
-				[
-					{model:self.sequelize.models.Github},
-					{model:self.sequelize.models.Google},
-					{model:self.sequelize.models.Facebook},
-					{model:self.sequelize.models.Twitter},
-					{model:self.sequelize.models.Linkedin},
-					{model:self.sequelize.models.Telephone},
-					{
-						model:self.sequelize.models.Emailprofile,
-						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
-					}
-				]
-			}
-		))
-		if(err) throw (err)
-		if(care === null) return {}
+			where: {
+				uid
+			},
+			attributes: attributes.person,
+			include: [{
+					model: self.sequelize.models.Github
+				},
+				{
+					model: self.sequelize.models.Google
+				},
+				{
+					model: self.sequelize.models.Facebook
+				},
+				{
+					model: self.sequelize.models.Twitter
+				},
+				{
+					model: self.sequelize.models.Linkedin
+				},
+				{
+					model: self.sequelize.models.Telephone,
+					attributes: ['Telephone', 'IsActive', 'puid', 'ProfilePic']
+				},
+				{
+					model: self.sequelize.models.Emailprofile,
+					attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
+				}
+			]
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
+	}
+	async everyOne(uid, moreAttributes) {
+		let self = this
+		let attributes = {
+			person: ['uid', 'Name', 'Gender', 'IsActive']
+		}
+		let [err, care] = await to(self.sequelize.models.Person.findAll({
+			// where: {
+			// 	uid
+			// },
+			attributes: attributes.person,
+			include: [{
+					model: self.sequelize.models.Github
+				},
+				{
+					model: self.sequelize.models.Google
+				},
+				{
+					model: self.sequelize.models.Facebook
+				},
+				{
+					model: self.sequelize.models.Twitter
+				},
+				{
+					model: self.sequelize.models.Linkedin
+				},
+				{
+					model: self.sequelize.models.Telephone,
+					attributes: ['Telephone', 'IsActive', 'puid', 'ProfilePic']
+				},
+				{
+					model: self.sequelize.models.Emailprofile,
+					attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
+				}
+			]
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
+		return care
 	}
 
 
 	async update(data, where) {
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Emailprofile.update(data, {where: where, individualHooks: true}))
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Emailprofile.update(data, {
+			where: where,
+			individualHooks: true
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
-	
+
 	async delete(where) {
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Emailprofile.destroy({where}))		
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Emailprofile.destroy({
+			where
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
@@ -1336,48 +1578,63 @@ class EmailProfile
 	async whichPersonwithEmailid(emailid, moreAttributes) {
 		let self = this
 		let attributes = {
-			person: ['uid','Name', 'Gender', 'IsActive']
+			person: ['uid', 'Name', 'Gender', 'IsActive']
 		}
 		let [err, care] = await to(self.sequelize.models.Person.findOne({
-			attributes:attributes.person,
-			include: 
-				[
-					{model:self.sequelize.models.Github},
-					{model:self.sequelize.models.Google},
-					{model:self.sequelize.models.Facebook},
-					{model:self.sequelize.models.Twitter},
-					{model:self.sequelize.models.Linkedin},
-					{model:self.sequelize.models.Telephone},
-					{
-						model:self.sequelize.models.Emailprofile,
-						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic'],
-						where: {emailuid: emailid}
+			attributes: attributes.person,
+			include: [{
+					model: self.sequelize.models.Github
+				},
+				{
+					model: self.sequelize.models.Google
+				},
+				{
+					model: self.sequelize.models.Facebook
+				},
+				{
+					model: self.sequelize.models.Twitter
+				},
+				{
+					model: self.sequelize.models.Linkedin
+				},
+				{
+					model: self.sequelize.models.Telephone
+				},
+				{
+					model: self.sequelize.models.Emailprofile,
+					attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic'],
+					where: {
+						emailuid: emailid
 					}
-				]
-			}
-		))
-		if(err) throw (err)
-		if(care === null) return {}
+				}
+			]
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 	async addProfile(profile) {
 		let self = this;
-		let [err, care] = []
-		;[err, care] = await to(self.sequelize.models.Emailprofile.create(profile))
+		let [err, care] = [];
+		[err, care] = await to(self.sequelize.models.Emailprofile.create(profile))
 
-		if(err) {
-			let {a} = err.message || err.msg
-			return Promise.reject({msg:err.msg||err.errors[0].message||err.message||err, code:err.code||422, status:422})
+		if (err) {
+			let {
+				a
+			} = err.message || err.msg
+			return Promise.reject({
+				msg: err.msg || err.errors[0].message || err.message || err,
+				code: err.code || 422,
+				status: 422
+			})
 		}
 		return care;
 	}
 }
 
-class TelephoneProfile 
-{
-	constructor(sequelize)
-	{
+class TelephoneProfile {
+	constructor(sequelize) {
 		// super();
 		let self = this;
 		self.sequelize = sequelize;
@@ -1385,91 +1642,125 @@ class TelephoneProfile
 		// self.Families = self.Family = new family;
 		// self.FamilyMembers = self.familyMembers = new familyMembers;
 	}
-	
+
 	async whichTelephoneProfile(profile) {
-		
+
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Telephone.findOne({where:profile,
-			include: [
-				{
-					model:self.sequelize.models.TelephoneCode
+		let [err, care] = await to(self.sequelize.models.Telephone.findOne({
+			where: profile,
+			include: [{
+					model: self.sequelize.models.TelephoneCode
 				}
+
+			],
+			attributes: [
+				"puid",
+				"Telephone",
+				"IsActive",
+				"ProfilePic"
 			]
+
 		}))
-		if(err) throw (err)
-		if(care === null) return {}
+		if (err) throw (err)
+		if (care === null) return {}
+		return care
+	}
+
+	async whichPersonfromTelephone(profile) {
+		console.log("started")
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Person.findOne({
+			include: [{
+					model: self.sequelize.models.Telephone,
+					where: profile,
+					attributes: [
+						"puid",
+						"Telephone",
+						"IsActive",
+						"ProfilePic"
+					]
+				}
+
+			]
+
+		}))
+		console.log(err)
+		if (err) throw (err)
+		if (care === null) return {}
 		return care
 	}
 
 
-	async createTelephoneCode(data){
+	async createTelephoneCode(data) {
 		let self = this
 		await self.removeOldCodes();
 		data.Telephone = isphone(data.Telephone)[0]
 		let [err, care] = await to(self.sequelize.models.TelephoneCode.create(data));
-		if(err) throw (err)
-		if(care === null) return {}
+		if (err) throw (err)
+		if (care === null) return {}
 		return care
 	}
 
-	
-	async removeOldCodes(){
-		let self = this
-		, select = {};
 
-		select['createdAt'] ={lte:moment().subtract(config.get('/CodeTTL'), 'minutes').toDate()}
+	async removeOldCodes() {
+		let self = this,
+			select = {};
+
+		select['createdAt'] = {
+			lte: moment().subtract(config.get('/CodeTTL'), 'minutes').toDate()
+		}
 		// console.log(select)
-		let [err, care] = await to(self.sequelize.models.TelephoneCode.destroy({where:select}));
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.TelephoneCode.destroy({
+			where: select
+		}));
+		if (err) throw (err)
+		if (care === null) return {}
 		return care
 	}
 
-	
-	async deleteCode(Code){
+
+	async deleteCode(Code) {
 		let self = this
-		let [err, care] = await to(self.sequelize.models.TelephoneCode.destroy({where:{Code}}));
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.TelephoneCode.destroy({
+			where: {
+				Code
+			}
+		}));
+		if (err) throw (err)
+		if (care === null) return {}
 		return care
 	}
 
 	async whichPersonwithTelephoneProfile(profile) {
-		
+
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Person.findOne(
-			{
-				
-				include: [
-					{
-						model:self.sequelize.models.Telephone,
-						where:profile
-					}
-				]
-			}
-		))
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Person.findOne({
+
+			include: [{
+				model: self.sequelize.models.Telephone,
+				where: profile
+			}]
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care
 	}
 
-	
+
 	async whichTelephoneProfilewithCode(profile, code) {
-		
+
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Telephone.findOne(
-			{
-				where:profile,
-				include: [
-					{
-						model:self.sequelize.models.TelephoneCode,
-						where:{Code:code}
-					}
-				]
-			}
-		))
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Telephone.findOne({
+			where: profile,
+			include: [{
+				model: self.sequelize.models.TelephoneCode,
+				where: {
+					Code: code
+				}
+			}]
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care
 	}
 
@@ -1478,46 +1769,62 @@ class TelephoneProfile
 	async whichPerson(uid, moreAttributes) {
 		let self = this
 		let attributes = {
-			person: ['uid','Name', 'Gender', 'IsActive']
+			person: ['uid', 'Name', 'Gender', 'IsActive']
 		}
 		let [err, care] = await to(self.sequelize.models.Person.findOne({
-			where:{uid},
-			attributes:attributes.person,
-			include: 
-				[
-					{model:self.sequelize.models.Github},
-					{model:self.sequelize.models.Google},
-					{model:self.sequelize.models.Facebook},
-					{model:self.sequelize.models.Twitter},
-					{model:self.sequelize.models.Linkedin},
-					{model:self.sequelize.models.Emailprofile},
-					{
-						model:self.sequelize.models.Telephone,
-						attributes: ['Telephone', 'IsActive', 'puid', 'ProfilePic']
-					}
-				]
-			}
-		))
-		if(err) throw (err)
-		if(care === null) return {}
+			where: {
+				uid
+			},
+			attributes: attributes.person,
+			include: [{
+					model: self.sequelize.models.Github
+				},
+				{
+					model: self.sequelize.models.Google
+				},
+				{
+					model: self.sequelize.models.Facebook
+				},
+				{
+					model: self.sequelize.models.Twitter
+				},
+				{
+					model: self.sequelize.models.Linkedin
+				},
+				{
+					model: self.sequelize.models.Emailprofile
+				},
+				{
+					model: self.sequelize.models.Telephone,
+					attributes: ['Telephone', 'IsActive', 'puid', 'ProfilePic']
+				}
+			]
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 
 	async update(data, where) {
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Telephone.update(data, {where: where, individualHooks: true}))
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Telephone.update(data, {
+			where: where,
+			individualHooks: true
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
-	
+
 	async delete(where) {
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Telephone.destroy({where}))		
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Telephone.destroy({
+			where
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
@@ -1526,49 +1833,64 @@ class TelephoneProfile
 	async whichPersonwithTelephoneid(Telephoneid, moreAttributes) {
 		let self = this
 		let attributes = {
-			person: ['uid','Name', 'Gender', 'IsActive']
+			person: ['uid', 'Name', 'Gender', 'IsActive']
 		}
 		let [err, care] = await to(self.sequelize.models.Person.findOne({
-			attributes:attributes.person,
-			include: 
-				[
-					{model:self.sequelize.models.Github},
-					{model:self.sequelize.models.Google},
-					{model:self.sequelize.models.Facebook},
-					{model:self.sequelize.models.Twitter},
-					{model:self.sequelize.models.Linkedin},
-					{model:self.sequelize.models.Emailprofile},
-					{
-						model:self.sequelize.models.Telephone,
-						attributes: ['Telephone', 'IsActive', 'puid', 'ProfilePic'],
-						where: {puid: Telephoneid}
+			attributes: attributes.person,
+			include: [{
+					model: self.sequelize.models.Github
+				},
+				{
+					model: self.sequelize.models.Google
+				},
+				{
+					model: self.sequelize.models.Facebook
+				},
+				{
+					model: self.sequelize.models.Twitter
+				},
+				{
+					model: self.sequelize.models.Linkedin
+				},
+				{
+					model: self.sequelize.models.Emailprofile
+				},
+				{
+					model: self.sequelize.models.Telephone,
+					attributes: ['Telephone', 'IsActive', 'puid', 'ProfilePic'],
+					where: {
+						puid: Telephoneid
 					}
-				]
-			}
-		))
-		if(err) throw (err)
-		if(care === null) return {}
+				}
+			]
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 	async addProfile(profile) {
 		let self = this;
-		let [err, care] = []
-		;[err, care] = await to(self.sequelize.models.Telephone.create(profile))
+		let [err, care] = [];
+		[err, care] = await to(self.sequelize.models.Telephone.create(profile))
 
-		if(err) {
-			let {a} = err.message || err.msg
-			return Promise.reject({msg:err.msg||err.errors[0].message||err.message||err, code:err.code||422, status:422})
+		if (err) {
+			let {
+				a
+			} = err.message || err.msg
+			return Promise.reject({
+				msg: err.msg || err.errors[0].message || err.message || err,
+				code: err.code || 422,
+				status: 422
+			})
 		}
 		return care;
 	}
 }
 
 
-class GitProfile 
-{
-	constructor(sequelize)
-	{
+class GitProfile {
+	constructor(sequelize) {
 		// super();
 		let self = this;
 		self.sequelize = sequelize;
@@ -1576,53 +1898,72 @@ class GitProfile
 		// self.Families = self.Family = new family;
 		// self.FamilyMembers = self.familyMembers = new familyMembers;
 	}
-	
+
 	async whichGitProfile(profile) {
-		
+
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Github.findOne({where:profile}))
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Github.findOne({
+			where: profile
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 	async whichPerson(uid, moreAttributes) {
 		let self = this
 		let attributes = {
-			person: ['uid','Name', 'Gender', 'IsActive']
+			person: ['uid', 'Name', 'Gender', 'IsActive']
 		}
 		let [err, care] = await to(self.sequelize.models.Person.findOne({
-			where:{uid},
-			attributes:attributes.person,
-			include: 
-				[
-					{model:self.sequelize.models.Github},
-					{model:self.sequelize.models.Google},
-					{model:self.sequelize.models.Facebook},
-					{model:self.sequelize.models.Twitter},
-					{model:self.sequelize.models.Linkedin},
-					{model:self.sequelize.models.Telephone},
-					{
-						model:self.sequelize.models.Emailprofile,
-						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
-					}
-				]
-			}
-		))
-		if(err) throw (err)
-		if(care === null) return {}
+			where: {
+				uid
+			},
+			attributes: attributes.person,
+			include: [{
+					model: self.sequelize.models.Github
+				},
+				{
+					model: self.sequelize.models.Google
+				},
+				{
+					model: self.sequelize.models.Facebook
+				},
+				{
+					model: self.sequelize.models.Twitter
+				},
+				{
+					model: self.sequelize.models.Linkedin
+				},
+				{
+					model: self.sequelize.models.Telephone
+				},
+				{
+					model: self.sequelize.models.Emailprofile,
+					attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
+				}
+			]
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 	async addProfile(profile) {
 		let self = this;
-		let [err, care] = []
-		;[err, care] = await to(self.sequelize.models.Github.create(profile))
+		let [err, care] = [];
+		[err, care] = await to(self.sequelize.models.Github.create(profile))
 
-		if(err) {
+		if (err) {
 			console.log(err)
-			let {a} = err.message || err.msg
-			return Promise.reject({msg:err.msg||err.errors[0].message||err.message||err, code:err.code||422, status:422})
+			let {
+				a
+			} = err.message || err.msg
+			return Promise.reject({
+				msg: err.msg || err.errors[0].message || err.message || err,
+				code: err.code || 422,
+				status: 422
+			})
 		}
 		return care;
 	}
@@ -1630,54 +1971,68 @@ class GitProfile
 	async whichPersonwithGituid(guid, moreAttributes) {
 		let self = this
 		let attributes = {
-			person: ['uid','Name', 'Gender', 'IsActive']
+			person: ['uid', 'Name', 'Gender', 'IsActive']
 		}
 		let [err, care] = await to(self.sequelize.models.Person.findOne({
-			attributes:attributes.person,
-			include: 
-				[
-					{model:self.sequelize.models.Google},
-					{model:self.sequelize.models.Emailprofile},
-					{model:self.sequelize.models.Facebook},
-					{model:self.sequelize.models.Twitter},
-					{model:self.sequelize.models.Linkedin},
-					{model:self.sequelize.models.Telephone},
-					{
-						model:self.sequelize.models.Github,
-						attributes: ['Name', 'Email', 'IsActive', 'ProfilePic', 'gituid'],
-						where: {gituid: guid}
+			attributes: attributes.person,
+			include: [{
+					model: self.sequelize.models.Google
+				},
+				{
+					model: self.sequelize.models.Emailprofile
+				},
+				{
+					model: self.sequelize.models.Facebook
+				},
+				{
+					model: self.sequelize.models.Twitter
+				},
+				{
+					model: self.sequelize.models.Linkedin
+				},
+				{
+					model: self.sequelize.models.Telephone
+				},
+				{
+					model: self.sequelize.models.Github,
+					attributes: ['Name', 'Email', 'IsActive', 'ProfilePic', 'gituid'],
+					where: {
+						gituid: guid
 					}
-				]
-			}
-		))
+				}
+			]
+		}))
 		// console.log(err)
-		if(err) throw (err)
-		if(care === null) return {}
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 	async update(data, where) {
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Github.update(data, {where: where, individualHooks: true}))
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Github.update(data, {
+			where: where,
+			individualHooks: true
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
-	
+
 	async delete(where) {
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Github.destroy({where}))		
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Github.destroy({
+			where
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 }
 
-class GoogleProfile 
-{
-	constructor(sequelize)
-	{
+class GoogleProfile {
+	constructor(sequelize) {
 		// super();
 		let self = this;
 		self.sequelize = sequelize;
@@ -1685,107 +2040,140 @@ class GoogleProfile
 		// self.Families = self.Family = new family;
 		// self.FamilyMembers = self.familyMembers = new familyMembers;
 	}
-	
+
 	async whichGoogleProfile(profile) {
-		
+
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Google.findOne({where:profile}))
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Google.findOne({
+			where: profile
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 	async whichPerson(uid, moreAttributes) {
 		let self = this
 		let attributes = {
-			person: ['uid','Name', 'Gender', 'IsActive']
+			person: ['uid', 'Name', 'Gender', 'IsActive']
 		}
 		let [err, care] = await to(self.sequelize.models.Person.findOne({
-			where:{uid},
-			attributes:attributes.person,
-			include: 
-				[
-					{model:self.sequelize.models.Github},
-					{model:self.sequelize.models.Google},
-					{model:self.sequelize.models.Facebook},
-					{model:self.sequelize.models.Twitter},
-					{model:self.sequelize.models.Telephone},
-					{model:self.sequelize.models.Linkedin},
-					{
-						model:self.sequelize.models.Emailprofile,
-						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
-					}
-				]
-			}
-		))
-		if(err) throw (err)
-		if(care === null) return {}
+			where: {
+				uid
+			},
+			attributes: attributes.person,
+			include: [{
+					model: self.sequelize.models.Github
+				},
+				{
+					model: self.sequelize.models.Google
+				},
+				{
+					model: self.sequelize.models.Facebook
+				},
+				{
+					model: self.sequelize.models.Twitter
+				},
+				{
+					model: self.sequelize.models.Telephone
+				},
+				{
+					model: self.sequelize.models.Linkedin
+				},
+				{
+					model: self.sequelize.models.Emailprofile,
+					attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
+				}
+			]
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 	async whichPersonwithGuid(guid, moreAttributes) {
 		let self = this
 		let attributes = {
-			person: ['uid','Name', 'Gender', 'IsActive']
+			person: ['uid', 'Name', 'Gender', 'IsActive']
 		}
 		let [err, care] = await to(self.sequelize.models.Person.findOne({
-			attributes:attributes.person,
-			include: 
-				[
-					{model:self.sequelize.models.Github},
-					{model:self.sequelize.models.Emailprofile},
-					{model:self.sequelize.models.Facebook},
-					{model:self.sequelize.models.Twitter},
-					{model:self.sequelize.models.Telephone},
-					{model:self.sequelize.models.Linkedin},
-					{
-						model:self.sequelize.models.Google,
-						attributes: ['Name', 'Email', 'IsActive', 'ProfilePic', 'guid'],
-						where: {guid: guid}
+			attributes: attributes.person,
+			include: [{
+					model: self.sequelize.models.Github
+				},
+				{
+					model: self.sequelize.models.Emailprofile
+				},
+				{
+					model: self.sequelize.models.Facebook
+				},
+				{
+					model: self.sequelize.models.Twitter
+				},
+				{
+					model: self.sequelize.models.Telephone
+				},
+				{
+					model: self.sequelize.models.Linkedin
+				},
+				{
+					model: self.sequelize.models.Google,
+					attributes: ['Name', 'Email', 'IsActive', 'ProfilePic', 'guid'],
+					where: {
+						guid: guid
 					}
-				]
-			}
-		))
-		if(err) throw (err)
-		if(care === null) return {}
+				}
+			]
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 	async update(data, where) {
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Google.update(data, {where: where, individualHooks: true}))
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Google.update(data, {
+			where: where,
+			individualHooks: true
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
-	
+
 	async delete(where) {
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Google.destroy({where}))		
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Google.destroy({
+			where
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 	async addProfile(profile) {
 		let self = this;
-		let [err, care] = []
-		;[err, care] = await to(self.sequelize.models.Google.create(profile))
+		let [err, care] = [];
+		[err, care] = await to(self.sequelize.models.Google.create(profile))
 
-		if(err) {
+		if (err) {
 			console.log(err)
-			let {a} = err.message || err.msg
-			return Promise.reject({msg:err.msg||err.errors[0].message||err.message||err, code:err.code||422, status:422})
+			let {
+				a
+			} = err.message || err.msg
+			return Promise.reject({
+				msg: err.msg || err.errors[0].message || err.message || err,
+				code: err.code || 422,
+				status: 422
+			})
 		}
 		return care;
 	}
 }
 
-class TwitterProfile 
-{
-	constructor(sequelize)
-	{
+class TwitterProfile {
+	constructor(sequelize) {
 		// super();
 		let self = this;
 		self.sequelize = sequelize;
@@ -1793,107 +2181,140 @@ class TwitterProfile
 		// self.Families = self.Family = new family;
 		// self.FamilyMembers = self.familyMembers = new familyMembers;
 	}
-	
+
 	async whichTwitterProfile(profile) {
-		
+
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Twitter.findOne({where:profile}))
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Twitter.findOne({
+			where: profile
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 	async whichPerson(uid, moreAttributes) {
 		let self = this
 		let attributes = {
-			person: ['uid','Name', 'Gender', 'IsActive']
+			person: ['uid', 'Name', 'Gender', 'IsActive']
 		}
 		let [err, care] = await to(self.sequelize.models.Person.findOne({
-			where:{uid},
-			attributes:attributes.person,
-			include: 
-				[
-					{model:self.sequelize.models.Github},
-					{model:self.sequelize.models.Google},
-					{model:self.sequelize.models.Facebook},
-					{model:self.sequelize.models.Twitter},
-					{model:self.sequelize.models.Telephone},
-					{model:self.sequelize.models.Linkedin},
-					{
-						model:self.sequelize.models.Emailprofile,
-						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
-					}
-				]
-			}
-		))
-		if(err) throw (err)
-		if(care === null) return {}
+			where: {
+				uid
+			},
+			attributes: attributes.person,
+			include: [{
+					model: self.sequelize.models.Github
+				},
+				{
+					model: self.sequelize.models.Google
+				},
+				{
+					model: self.sequelize.models.Facebook
+				},
+				{
+					model: self.sequelize.models.Twitter
+				},
+				{
+					model: self.sequelize.models.Telephone
+				},
+				{
+					model: self.sequelize.models.Linkedin
+				},
+				{
+					model: self.sequelize.models.Emailprofile,
+					attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
+				}
+			]
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 	async whichPersonwithTuid(guid, moreAttributes) {
 		let self = this
 		let attributes = {
-			person: ['uid','Name', 'Gender', 'IsActive']
+			person: ['uid', 'Name', 'Gender', 'IsActive']
 		}
 		let [err, care] = await to(self.sequelize.models.Person.findOne({
-			attributes:attributes.person,
-			include: 
-				[
-					{model:self.sequelize.models.Github},
-					{model:self.sequelize.models.Emailprofile},
-					{model:self.sequelize.models.Facebook},
-					{model:self.sequelize.models.Google},
-					{model:self.sequelize.models.Telephone},
-					{model:self.sequelize.models.Linkedin},
-					{
-						model:self.sequelize.models.Twitter,
-						attributes: ['Name', 'Email', 'IsActive', 'ProfilePic', 'tuid'],
-						where: {tuid: guid}
+			attributes: attributes.person,
+			include: [{
+					model: self.sequelize.models.Github
+				},
+				{
+					model: self.sequelize.models.Emailprofile
+				},
+				{
+					model: self.sequelize.models.Facebook
+				},
+				{
+					model: self.sequelize.models.Google
+				},
+				{
+					model: self.sequelize.models.Telephone
+				},
+				{
+					model: self.sequelize.models.Linkedin
+				},
+				{
+					model: self.sequelize.models.Twitter,
+					attributes: ['Name', 'Email', 'IsActive', 'ProfilePic', 'tuid'],
+					where: {
+						tuid: guid
 					}
-				]
-			}
-		))
-		if(err) throw (err)
-		if(care === null) return {}
+				}
+			]
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 	async update(data, where) {
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Twitter.update(data, {where: where, individualHooks: true}))
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Twitter.update(data, {
+			where: where,
+			individualHooks: true
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
-	
+
 	async delete(where) {
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Twitter.destroy({where}))		
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Twitter.destroy({
+			where
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 	async addProfile(profile) {
 		let self = this;
-		let [err, care] = []
-		;[err, care] = await to(self.sequelize.models.Twitter.create(profile))
+		let [err, care] = [];
+		[err, care] = await to(self.sequelize.models.Twitter.create(profile))
 
-		if(err) {
+		if (err) {
 			console.log(err)
-			let {a} = err.message || err.msg
-			return Promise.reject({msg:err.msg||err.errors[0].message||err.message||err, code:err.code||422, status:422})
+			let {
+				a
+			} = err.message || err.msg
+			return Promise.reject({
+				msg: err.msg || err.errors[0].message || err.message || err,
+				code: err.code || 422,
+				status: 422
+			})
 		}
 		return care;
 	}
 }
 
-class FbProfile 
-{
-	constructor(sequelize)
-	{
+class FbProfile {
+	constructor(sequelize) {
 		// super();
 		let self = this;
 		self.sequelize = sequelize;
@@ -1901,108 +2322,141 @@ class FbProfile
 		// self.Families = self.Family = new family;
 		// self.FamilyMembers = self.familyMembers = new familyMembers;
 	}
-	
+
 	async whichFbProfile(profile) {
-		
+
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Facebook.findOne({where:profile}))
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Facebook.findOne({
+			where: profile
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care
 	}
 
 	async whichPerson(uid, moreAttributes) {
 		let self = this
 		let attributes = {
-			person: ['uid','Name', 'Gender', 'IsActive']
+			person: ['uid', 'Name', 'Gender', 'IsActive']
 		}
 		let [err, care] = await to(self.sequelize.models.Person.findOne({
-			where:{uid},
-			attributes:attributes.person,
-			include: 
-				[
-					{model:self.sequelize.models.Github},
-					{model:self.sequelize.models.Google},
-					{model:self.sequelize.models.Facebook},
-					{model:self.sequelize.models.Twitter},
-					{model:self.sequelize.models.Telephone},
-					{model:self.sequelize.models.Linkedin},
-					{
-						model:self.sequelize.models.Emailprofile,
-						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
-					}
-				]
-			}
-		))
-		if(err) throw (err)
-		if(care === null) return {}
+			where: {
+				uid
+			},
+			attributes: attributes.person,
+			include: [{
+					model: self.sequelize.models.Github
+				},
+				{
+					model: self.sequelize.models.Google
+				},
+				{
+					model: self.sequelize.models.Facebook
+				},
+				{
+					model: self.sequelize.models.Twitter
+				},
+				{
+					model: self.sequelize.models.Telephone
+				},
+				{
+					model: self.sequelize.models.Linkedin
+				},
+				{
+					model: self.sequelize.models.Emailprofile,
+					attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
+				}
+			]
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 	async whichPersonwithFbuid(guid, moreAttributes) {
 		let self = this
 		let attributes = {
-			person: ['uid','Name', 'Gender', 'IsActive']
+			person: ['uid', 'Name', 'Gender', 'IsActive']
 		}
 		let [err, care] = await to(self.sequelize.models.Person.findOne({
-			attributes:attributes.person,
-			include: 
-				[
-					{model:self.sequelize.models.Github},
-					{model:self.sequelize.models.Emailprofile},
-					{model:self.sequelize.models.Google},
-					{model:self.sequelize.models.Twitter},
-					{model:self.sequelize.models.Telephone},
-					{model:self.sequelize.models.Linkedin},
-					{
-						model:self.sequelize.models.Facebook,
-						attributes: ['Name', 'Email', 'IsActive', 'ProfilePic', 'fbuid'],
-						where: {fbuid: guid}
+			attributes: attributes.person,
+			include: [{
+					model: self.sequelize.models.Github
+				},
+				{
+					model: self.sequelize.models.Emailprofile
+				},
+				{
+					model: self.sequelize.models.Google
+				},
+				{
+					model: self.sequelize.models.Twitter
+				},
+				{
+					model: self.sequelize.models.Telephone
+				},
+				{
+					model: self.sequelize.models.Linkedin
+				},
+				{
+					model: self.sequelize.models.Facebook,
+					attributes: ['Name', 'Email', 'IsActive', 'ProfilePic', 'fbuid'],
+					where: {
+						fbuid: guid
 					}
-				]
-			}
-		))
+				}
+			]
+		}))
 		console.log(guid)
-		if(err) throw (err)
-		if(care === null) return {}
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 	async update(data, where) {
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Facebook.update(data, {where: where, individualHooks: true}))
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Facebook.update(data, {
+			where: where,
+			individualHooks: true
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
-	
+
 	async delete(where) {
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Facebook.destroy({where}))		
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Facebook.destroy({
+			where
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 	async addProfile(profile) {
 		let self = this;
-		let [err, care] = []
-		;[err, care] = await to(self.sequelize.models.Facebook.create(profile))
+		let [err, care] = [];
+		[err, care] = await to(self.sequelize.models.Facebook.create(profile))
 
-		if(err) {
+		if (err) {
 			console.log(err)
-			let {a} = err.message || err.msg
-			return Promise.reject({msg:err.msg||err.errors[0].message||err.message||err, code:err.code||422, status:422})
+			let {
+				a
+			} = err.message || err.msg
+			return Promise.reject({
+				msg: err.msg || err.errors[0].message || err.message || err,
+				code: err.code || 422,
+				status: 422
+			})
 		}
 		return care;
 	}
 }
 
-class LinkedinProfile 
-{
-	constructor(sequelize)
-	{
+class LinkedinProfile {
+	constructor(sequelize) {
 		// super();
 		let self = this;
 		self.sequelize = sequelize;
@@ -2010,113 +2464,148 @@ class LinkedinProfile
 		// self.Families = self.Family = new family;
 		// self.FamilyMembers = self.familyMembers = new familyMembers;
 	}
-	
+
 	async whichLinkedinProfile(profile) {
-		
+
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Linkedin.findOne({where:profile}))
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Linkedin.findOne({
+			where: profile
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care
 	}
 
 	async whichPerson(uid, moreAttributes) {
 		let self = this
 		let attributes = {
-			person: ['uid','Name', 'Gender', 'IsActive']
+			person: ['uid', 'Name', 'Gender', 'IsActive']
 		}
 		let [err, care] = await to(self.sequelize.models.Person.findOne({
-			where:{uid},
-			attributes:attributes.person,
-			include: 
-				[
-					{model:self.sequelize.models.Github},
-					{model:self.sequelize.models.Google},
-					{model:self.sequelize.models.Facebook},
-					{model:self.sequelize.models.Twitter},
-					{model:self.sequelize.models.Telephone},
-					{model:self.sequelize.models.Linkedin},
-					{
-						model:self.sequelize.models.Emailprofile,
-						attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
-					}
-				]
-			}
-		))
-		if(err) throw (err)
-		if(care === null) return {}
+			where: {
+				uid
+			},
+			attributes: attributes.person,
+			include: [{
+					model: self.sequelize.models.Github
+				},
+				{
+					model: self.sequelize.models.Google
+				},
+				{
+					model: self.sequelize.models.Facebook
+				},
+				{
+					model: self.sequelize.models.Twitter
+				},
+				{
+					model: self.sequelize.models.Telephone
+				},
+				{
+					model: self.sequelize.models.Linkedin
+				},
+				{
+					model: self.sequelize.models.Emailprofile,
+					attributes: ['Email', 'IsActive', 'emailuid', 'ProfilePic']
+				}
+			]
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 	async whichPersonwithLuid(guid, moreAttributes) {
 		let self = this
 		let attributes = {
-			person: ['uid','Name', 'Gender', 'IsActive']
+			person: ['uid', 'Name', 'Gender', 'IsActive']
 		}
 		let [err, care] = await to(self.sequelize.models.Person.findOne({
-			attributes:attributes.person,
-			include: 
-				[
-					{model:self.sequelize.models.Github},
-					{model:self.sequelize.models.Emailprofile},
-					{model:self.sequelize.models.Google},
-					{model:self.sequelize.models.Twitter},
-					{model:self.sequelize.models.Telephone},
-					{model:self.sequelize.models.Facebook},
-					{
-						model:self.sequelize.models.Linkedin,
-						attributes: ['Name', 'Email', 'IsActive', 'ProfilePic', 'luid'],
-						where: {luid: guid}
+			attributes: attributes.person,
+			include: [{
+					model: self.sequelize.models.Github
+				},
+				{
+					model: self.sequelize.models.Emailprofile
+				},
+				{
+					model: self.sequelize.models.Google
+				},
+				{
+					model: self.sequelize.models.Twitter
+				},
+				{
+					model: self.sequelize.models.Telephone
+				},
+				{
+					model: self.sequelize.models.Facebook
+				},
+				{
+					model: self.sequelize.models.Linkedin,
+					attributes: ['Name', 'Email', 'IsActive', 'ProfilePic', 'luid'],
+					where: {
+						luid: guid
 					}
-				]
-			}
-		))
-		if(err) throw (err)
-		if(care === null) return {}
+				}
+			]
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 	async update(data, where) {
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Linkedin.update(data, {where: where, individualHooks: true}))
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Linkedin.update(data, {
+			where: where,
+			individualHooks: true
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
-	
+
 	async delete(where) {
 		let self = this
-		let [err, care] = await to(self.sequelize.models.Linkedin.destroy({where}))		
-		if(err) throw (err)
-		if(care === null) return {}
+		let [err, care] = await to(self.sequelize.models.Linkedin.destroy({
+			where
+		}))
+		if (err) throw (err)
+		if (care === null) return {}
 		return care.dataValues
 	}
 
 	async addProfile(profile) {
 		let self = this;
-		let [err, care] = []
-		;[err, care] = await to(self.sequelize.models.Linkedin.create(profile))
+		let [err, care] = [];
+		[err, care] = await to(self.sequelize.models.Linkedin.create(profile))
 
-		if(err) {
+		if (err) {
 			console.log(err)
-			let {a} = err.message || err.msg
-			return Promise.reject({msg:err.msg||err.errors[0].message||err.message||err, code:err.code||422, status:422})
+			let {
+				a
+			} = err.message || err.msg
+			return Promise.reject({
+				msg: err.msg || err.errors[0].message || err.message || err,
+				code: err.code || 422,
+				status: 422
+			})
 		}
 		return care;
 	}
 }
 
 
-const appsConfig = require ('./apps.js')
+const appsConfig = require('./apps.js')
 
 module.exports = (sequelize) => {
 	let module = {};
-	module.Familyfe =  new familyfe(sequelize)
-	module.World =  new World(sequelize)
-	module.Person =  new Person(sequelize)
-	module.Family =  new Family(sequelize)
-	module.Profile =  new Profile(sequelize)
+	module.Familyfe = new familyfe(sequelize)
+	module.World = new World(sequelize)
+	module.Person = new Person(sequelize)
+	module.Family = new Family(sequelize)
+	module.Profile = new Profile(sequelize)
 	module.apps = new appsConfig(sequelize);
 	module.EmailProfile = new EmailProfile(sequelize);
 	module.TelephoneProfile = new TelephoneProfile(sequelize);
@@ -2125,8 +2614,8 @@ module.exports = (sequelize) => {
 	module.GoogleProfile = new GoogleProfile(sequelize);
 	module.TwitterProfile = new TwitterProfile(sequelize);
 	module.LinkedinProfile = new LinkedinProfile(sequelize);
-		// World: new World(sequelize),
-		// Person: new Person(sequelize),
-		// Family: new Family(sequelize)
+	// World: new World(sequelize),
+	// Person: new Person(sequelize),
+	// Family: new Family(sequelize)
 	return module
 }

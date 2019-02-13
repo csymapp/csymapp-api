@@ -17,23 +17,36 @@ class Profile extends csystem{
     
     async patchEmailProfile(req, res) {
 		let self = this;
-		let emailid = req.params.v1
+		let emailid = req.params.v1,
+		body = req.body
 		
 		let [err, care] = []
 		;[err, care] = await to(self.isAuthenticated(res, req))
 		if(err) throw err;
 		let authuid = care.uid
+
+		if(!emailid)throw ({ status:422, message:{emailid: "Please provide emailid to modify"}})
+
 		;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailid(emailid))
 		if(care === null) throw ({ status:422, message:"can't set for another user"})
 		let uidtoMod = care.uid;
-		if(authuid !== uidtoMod)throw ({ status:422, message:"can't set for another user"})
+		if(authuid !== uidtoMod){
+			let [_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", 1, authuid))
+			if(_err)throw ({ status:422, message:{Permission: "You are not allowed to modify that account"}})
 
-		if (authuid !== uidtoMod) {
-			throw ({ status:422, message:"can't set for another user"})
+			if(!csyAdmin)
+				throw ({ status:422, message:{Permission: "You are not allowed to modify that account"}})
 		}
-
 		
 		let data = JSON.parse(JSON.stringify(req.body))
+		// let tdata = {}
+		// if(data.IsActive)tdata.IsActive = data.IsActive
+		let tbody = {... body},ttbody = {},i
+		for(i in tbody)ttbody[i.toLowerCase()] = tbody[i]
+		data = {}
+		if(ttbody.IsActive)data["IsActive"] = ttbody.IsActive
+		if(ttbody.password)data["Password"] = ttbody.password
+		if(ttbody.cpassword)data["Cpassword"] = ttbody.cpassword
 		;[err, care] = await to (Familyfe.EmailProfile.update(data, {emailuid:emailid}))
 		if(err) throw (err)
 		;[err, care] = await to (Familyfe.EmailProfile.whichPerson(uidtoMod))
@@ -45,19 +58,24 @@ class Profile extends csystem{
     async deleteEmailProfile(req, res) {
 		let self = this;
 		let emailid = req.params.v1
-		
+		if(!emailid)throw ({ status:422, message:{emailid: "Please provide emailid to modify"}})
+
 		let [err, care] = []
 		;[err, care] = await to(self.isAuthenticated(res, req))
 		if(err) throw err;
 		let authuid = care.uid
 		;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailid(emailid))
-		if(care === null) throw ({ status:422, message:"can't set for another user"})
+		// if(care === null) throw ({ status:422, message:"can't set for another user"})
 		let uidtoMod = care.uid;
 		
-		if(authuid !== uidtoMod)throw ({ status:422, message:"can't set for another user"})
-
+		// if(authuid !== uidtoMod)throw ({ status:422, message:"can't set for another user"})
+		let [_err,csyAdmin] = [];
 		if (authuid !== uidtoMod) {
-			throw ({ status:422, message:"can't set for another user"})
+			[_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", 1, authuid))
+			if(_err)throw ({ status:422, message:{Permission: "You are not allowed to modify that account"}})
+
+			if(!csyAdmin)
+				throw ({ status:422, message:{Permission: "You are not allowed to modify that account"}})
 		}
 
 		let data = JSON.parse(JSON.stringify(req.body))
@@ -77,6 +95,8 @@ class Profile extends csystem{
 	// 	// data = JSON.parse(JSON.stringify(req.body))
 		if(code) {
 			;[err, care] = await to (Familyfe.EmailProfile.whichEmailProfileforCode(code))
+			console.log(care)
+			if(!(Object.keys(care).length))throw ({ status:422, message:{code: "You have provided an invalid code"}})
 			if(err) throw (err)
 			let emailid = care.	emailuid
 			let data = {
@@ -87,10 +107,11 @@ class Profile extends csystem{
 			if(req.query.redirect) {
 				res.redirect(`${req.query.redirect}`);
 			} else {
-				res.send("activated. But we don't know where to redirect you to...")
+				res.json({success:"activated. But we don't know where to redirect you to..."})
 			}
 		} else {
 			let emailid = req.body.emailid
+			if(!emailid)throw ({ status:422, message:{emailid: "Please provide either code or emailid to modify"}})
 		
 			entropy.use(charset8)
 			let Code = entropy.string().substring(0, 8);
@@ -103,8 +124,6 @@ class Profile extends csystem{
 			, redirect = req.query.redirecturl || req.query.redirect || req.connection.remoteAddress || req.socket.remoteAddress || req.connection.socket.remoteAddress
 			activationPath += '?redirect=' + redirect
 			;[err, care] = await to ( Familyfe.EmailProfile.emailActivation({Code,EmailprofileEmailuid:euid}, Email, activationPath))
-		
-
 			
 			return {euid}
 		}
@@ -129,7 +148,6 @@ class Profile extends csystem{
 				if (err) throw err
 				res.json(care)	
 				break;
-			
 			case 'GET':
 				;[err, care] = await to(self.getEmailProfile(req, res));
 				if (err) throw err
@@ -138,7 +156,7 @@ class Profile extends csystem{
 			
 			
 			default:
-				res.send('still building this sections');
+				res.status(422).json({error:{method:`${method} not supported`}});
 		}
     }
     

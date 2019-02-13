@@ -22,6 +22,20 @@ module.exports = (sequelize, DataTypes) => {
 				allowNull: false
 			}
 	    });
+	    FamilyMember.belongsTo(models.Family, {
+	    	onDelete: "CASCADE",
+	    	onUpdate: "CASCADE",
+			foreignKey: {
+				allowNull: false
+			}
+	    });
+	    FamilyMember.belongsTo(models.Person, {
+	    	onDelete: "CASCADE",
+	    	onUpdate: "CASCADE",
+			foreignKey: {
+				allowNull: false
+			}
+	    });
 	}
 
 	 return FamilyMember;

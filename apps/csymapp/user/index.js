@@ -26,20 +26,18 @@ class User extends csystem{
 
 		if(!body.profile)
 			body.profile = 'Email'
-		body.email = body.email || ''
+		body.email = body.email || body.Email || ''
 		body.phone = body.phone || ''
 		body.pin = body.pin || ''
-		body.phone = isphone(body.phone)[0]
-		// body.Cpin = body.Cpin || ''
-		// body.phone = body.phone || ''
+		// body.phone = isphone(body.phone)[0]
 
 		body.profile = body.profile.toLowerCase()
 
 		;[err, care] = await to(self.isAuthenticated(res, req))
 		
 		if(err)  {
-			if(err.message === 'jwt expired' || err.message === 'invalid token') throw err
-			body.phone = isphone(body.phone)[0]
+			if(err.message === 'jwt expired' || err.message === 'invalid token' || err.message==='jwt malformed') throw err
+			// body.phone = isphone(body.phone)[0]
 			// if phone
 			if(body.profile === 'phone') {
 				[err, care] = await to (Familyfe.Person.beget({
@@ -57,6 +55,7 @@ class User extends csystem{
 				if(err) throw (err)
 
 				let [err1, care1] = await to (Familyfe.TelephoneProfile.whichTelephoneProfile({Telephone:body.phone}))
+				//care = JSON.parse(JSON.stringify(care, (k,v) => (k === 'Pin')? undefined : 0))
 				if(err1) throw err1;
 				if(care1 === null) throw ({ status:422, message:"User does not exist"})
 				let puid = care1.puid;
@@ -129,14 +128,21 @@ class User extends csystem{
 			;[err, care] = await to (Familyfe.EmailProfile.whichPerson(useruid))
 			if(err) throw (err)
 			res.json(care)
-		} else { // user is logged in
+		} else { // user is logged in, add profile to his account
 			let myuid = care.uid 
 			let addtoUser = req.params.v1
 			if (addtoUser !== myuid) {
-				throw ({ status:422, message:"can't set for another user"})
+				let [_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", 1, myuid))
+				if(_err)throw ({ status:422, message:{Permission: "You are not allowed to view all users"}})
+
+				if(!csyAdmin)
+					throw ({ status:422, message:{Permission: "You are not allowed to set for another users"}})
 			}
+			if(!addtoUser)
+				addtoUser = myuid
 			if(addtoUser) {
-				// this user has to be yourself,,, unless of course you are an admin in csystem family...
+				// this user has to be yourself,,, {unless of course you are an admin in csystem family...}
+				// 
 				// 
 				// if phone
 				if(body.profile === 'phone')
@@ -144,8 +150,8 @@ class User extends csystem{
 						Telephone:body.phone, 
 						Pin:body.pin, 
 						Cpin:body.cpin,
-						IsActive:true,
-						PersonUid: myuid
+						IsActive:false,
+						PersonUid: addtoUser
 					}))
 				// if email=> default
 				else
@@ -153,16 +159,60 @@ class User extends csystem{
 						Email:body.email.toLowerCase() || '', 
 						Password:body.password, 
 						Cpassword:body.cpassword, 
-						IsActive:true,
-						PersonUid: myuid
+						IsActive:false,
+						PersonUid: addtoUser
 					}))
-				if(err)throw err
-				;[err, care] = await to (Familyfe.EmailProfile.whichPerson(myuid))
+				if(err){
+					if(!err.code)
+						throw ({ status:422, message:{peron: "Seems we can't find that person"}})
+					throw err
+				}
+				;[err, care] = await to (Familyfe.EmailProfile.whichPerson(addtoUser))
 				if(err) throw (err)
 				res.json(care)
 			}
 
 		}
+		
+	}
+
+	
+    async putUser(req, res) {
+		let self = this;
+		let checkUser = req.params.v1
+		let [err, care] = []		
+		, body = req.body
+		if(!checkUser) {
+			throw ({ status:422, message:{account: "please provide account to modify"}})
+		}
+
+		;[err, care] = await to(self.isAuthenticated(res, req))
+
+		if(err)
+			 throw err
+			 
+		let myuid = care.uid 
+		let addtoUser = req.params.v1
+		if (addtoUser !== myuid) {
+			let [_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", 1, myuid))
+			if(_err)throw ({ status:422, message:{Permission: "You are not allowed to modify that account"}})
+
+			if(!csyAdmin)
+				throw ({ status:422, message:{Permission: "You are not allowed to modify that account"}})
+		}
+
+		let tbody = {... body},
+		ttbody = {},
+		i
+		for(i in tbody)ttbody[i.toLowerCase()] = tbody[i]
+		let Name = ttbody.name
+		, Gender = ttbody.gender
+		, updateObj = {		}
+		if(Name) updateObj["Name"] = Name
+		if(Name) updateObj["Gender"] = Gender
+		;[err, care] = await to(Familyfe.Person.update_v1(updateObj,{uid:addtoUser}))
+		if(err) throw err
+		return care
 		
 	}
 	
@@ -181,8 +231,25 @@ class User extends csystem{
 			 throw err
 		let myuid = care.uid 
 		let checkUser = req.params.v1
+		if(!checkUser) {
+			let [_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", 1, myuid))
+			if(_err)throw ({ status:422, message:{Permission: "You are not allowed to view all users"}})
+
+			if(!csyAdmin)
+				throw ({ status:422, message:{Permission: "You are not allowed to view all users"}})
+			;[err, care] = await to (Familyfe.EmailProfile.everyOne())
+			if(err) throw (err)
+			res.json(care)
+			return
+		}
+		else 
 		if (checkUser !== myuid) {
-			throw ({ status:422, message:"can't check for another user"})
+			// check if myuid is systemAdmin
+			let [_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", 1, myuid))
+			if(_err)throw ({ status:422, message:{Permission: "can't check for another user"}})
+
+			if(!csyAdmin)
+				throw ({ status:422, message:{Permission: "can't check for another user"}})
 		}
 
 		if(checkUser) {
@@ -194,11 +261,51 @@ class User extends csystem{
 		}
 		
 	}
+    async deleteUser(req, res) {
+		let self = this;
+		let uid = req.params.v1
+		let [err, care] = []
+
+		let isLogged ;
+		let body = req.body
+
+		;[err, care] = await to(self.isAuthenticated(res, req))
+		
+		if(err)
+			 throw err
+		let myuid = care.uid 
+		let checkUser = req.params.v1
+		if(!checkUser) {
+			// let [_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", 1, myuid))
+			// if(_err)throw ({ status:422, message:{Permission: "You are not allowed to delete user"}})
+
+			// if(!csyAdmin)
+			// 	throw ({ status:422, message:{Permission: "You are not allowed to delete user"}})
+			throw ({ status:422, message:{account: "please provide account to delete"}})
+		}
+		else 
+		if (checkUser !== myuid) {
+			// check if myuid is systemAdmin
+			let [_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", 1, myuid))
+			if(_err)throw ({ status:422, message:{Permission: "You are not allowed to delete user"}})
+
+			if(!csyAdmin)
+				throw ({ status:422, message:{Permission: "You are not allowed to delete user"}})
+		}
+
+		// if(checkUser) {
+			// this user has to be yourself,,, unless of course you are an admin in csystem family...
+			// 
+			;[err, care] = await to (Familyfe.Person.delete(checkUser))
+			if(err) throw (err)
+			res.json(care)
+		// }
+		
+	}
 	
 
 
     async main(req, res){
-		// res.send("type")
 		let self = this;
 		let method = req.method;
 		let [err, care] = [];
@@ -213,12 +320,17 @@ class User extends csystem{
 				;[err, care] = await to(self.getUser(req, res));
 				if(err) throw(err)
 				break;
-			case 'PATCH':
-				;[err, care] = await to(self.patchGatewayTypes(req, res));
+			case 'DELETE':
+				;[err, care] = await to(self.deleteUser(req, res));
 				if(err) throw(err)
 				break;
+			case 'PUT':
+				;[err, care] = await to(self.putUser(req, res));
+				if(err) throw(err)
+				res.json(care)
+				break;
 			default:
-				res.send('still building this sections');
+				res.status(422).json({error:{method:`${method} not supported`}});
 		}
     }
     

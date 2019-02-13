@@ -1,24 +1,5 @@
 'use strict'
-// const Promise = require('bluebird')
-// const bcrypt = Promise.promisifyAll(require('bcrypt-nodejs'))
-
-// async function hashPassword(Person, options){
-// 	const SALT_FACTOR = 10
-// 	if(!Person.changed('Password')){
-// 		return
-// 	}
-
-// 	if(!Person.Cpassword)
-// 		return Promise.reject({code:1002, msg:"Please confirm your password"});
-// 	if(Person.Cpassword)
-// 		if(Person.Password !== Person.Cpassword)
-// 			return Promise.reject({code:1002, msg:"Passwords don't match"});
-// 	return bcrypt.genSaltAsync(SALT_FACTOR)
-// 		.then((salt)=>bcrypt.hashAsync(Person.dataValues.Password,salt, null))
-// 		.then(hash=>{
-// 			Person.setDataValue('Password', hash)
-// 		})
-// }
+const validator = require('validator')
 
 module.exports = (sequelize, DataTypes) => {
 	const Person = sequelize.define('Person', {
@@ -39,7 +20,20 @@ module.exports = (sequelize, DataTypes) => {
 		},
 		Gender: {
 			type:DataTypes.ENUM('Male', 'Female'),
-			defaultValue: 'Male'
+			defaultValue: 'Male',
+			validate: {
+				isNotNull: function (value, next){
+					if(validator.isEmpty(value)) {
+						console.log('No gender')
+						return next({gender:'Please provide a gender'})
+					}
+					value = value.toLowerCase()
+					if(value !== 'male' && value !== 'female') {
+						return next({gender:'Please provide a valid gender'})
+					}
+					else return next();
+				}
+            }
 		},
 		IsActive: {
 			type: DataTypes.BOOLEAN, 

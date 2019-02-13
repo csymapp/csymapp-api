@@ -23,26 +23,45 @@ class Profile extends csystem{
 		body.Code = body.code || body.Code
 		body.code = body.Code
 		let [err, care] = []
-		// ;[err, care] = await to(self.isAuthenticated(res, req))
-		// if(err) throw err;
-		// let authuid = care.uid
-		// ;[err, care] = await to (Familyfe.TelephoneProfile.whichPersonwithTelephoneProfile({puid:phoneid}))
-		// if(care === null) throw ({ status:422, message:"can't set for another user"})
-		// let uidtoMod = care.uid;
+
+		;[err, care] = await to(self.isAuthenticated(res, req))
+		if(err) throw err;
+		let authuid = care.uid
+		if(!phoneid)throw ({ status:422, message:{phoneid: "Please provide phoneid to modify"}})
+		;[err, care] = await to (Familyfe.TelephoneProfile.whichPersonwithTelephoneProfile({puid:phoneid}))
+		if(care === null) throw ({ status:422, message:"can't set for another user"})
+		let uidtoMod = care.uid;
 		// if(authuid !== uidtoMod)throw ({ status:422, message:"can't set for another user"})
 
-		// if (authuid !== uidtoMod) {
-		// 	throw ({ status:422, message:"can't set for another user"})
-		// }
+		let [_err,csyAdmin] = [];
+		if (authuid !== uidtoMod) {
+			// throw ({ status:422, message:"can't set for another user"})
+			[_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", 1, authuid))
+			if(_err)throw ({ status:422, message:{Permission: "You are not allowed to modify that account"}})
+
+			if(!csyAdmin)
+				throw ({ status:422, message:{Permission: "You are not allowed to modify that account"}})
+		}
 
 		let data;
 		// console.log(body)
 		if(body.IsActive === true) {
-			;[err, care] = await to (Familyfe.TelephoneProfile.whichTelephoneProfilewithCode({puid:phoneid},body.Code))
-			if(care === null || !Object.keys(care).length) throw ({ status:422, message:JSON.stringify({Code:"Wrong Code"})})
+			if(!csyAdmin){
+				if(!body.Code)throw ({ status:422, message:{code: "Please provide code to activate"}})
+				;[err, care] = await to (Familyfe.TelephoneProfile.whichTelephoneProfilewithCode({puid:phoneid},body.Code))
+				if(care === null || !Object.keys(care).length) throw ({ status:422, message:{code:"Wrong Code"}})
+			}
 		}
 		
 		data = JSON.parse(JSON.stringify(req.body))
+
+		let tbody = {... body},ttbody = {},i
+		for(i in tbody)ttbody[i.toLowerCase()] = tbody[i]
+		data = {}
+		if(ttbody.IsActive)data["IsActive"] = ttbody.IsActive
+		if(ttbody.pin)data["Pin"] = ttbody.pin
+		if(ttbody.cpin)data["Cpin"] = ttbody.pin
+
 		;[err, care] = await to (Familyfe.TelephoneProfile.update(data, {puid:phoneid}))
 		await to (Familyfe.TelephoneProfile.deleteCode(body.Code))
 		if(err) throw (err)
@@ -56,19 +75,25 @@ class Profile extends csystem{
     async deleteTelephoneProfile(req, res) {
 		let self = this;
 		let puid = req.params.v1
+		if(!puid)throw ({ status:422, message:{phoneid: "Please provide phoneid to modify"}})
 		
 		let [err, care] = []
 		;[err, care] = await to(self.isAuthenticated(res, req))
 		if(err) throw err;
 		let authuid = care.uid
 		;[err, care] = await to (Familyfe.TelephoneProfile.whichPersonwithTelephoneProfile({puid:puid}))
-		if(care === null) throw ({ status:422, message:"can't set for another user"})
+		// if(care === null) throw ({ status:422, message:"can't set for another user"})
 		let uidtoMod = care.uid;
 		
-		if(authuid !== uidtoMod)throw ({ status:422, message:"can't set for another user"})
+		// if(authuid !== uidtoMod)throw ({ status:422, message:"can't set for another user"})
 
+		let [_err,csyAdmin] = [];
 		if (authuid !== uidtoMod) {
-			throw ({ status:422, message:"can't set for another user"})
+			[_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", 1, authuid))
+			if(_err)throw ({ status:422, message:{Permission: "You are not allowed to modify that account"}})
+
+			if(!csyAdmin)
+				throw ({ status:422, message:{Permission: "You are not allowed to modify that account"}})
 		}
 
 		let data = JSON.parse(JSON.stringify(req.body))
@@ -87,9 +112,9 @@ class Profile extends csystem{
 		let [err, care] = []
         ;[err, care] = await to (Familyfe.TelephoneProfile.whichTelephoneProfile({Telephone:phone}))
         if(err) throw err;
-        if(care === null) throw ({ status:422, message:"User does not exist"})
-        if(Object.keys(care).length === 0) throw ({ status:422, message:"User does not exist"})
-        let puid = care.puid;
+        if(care === null) throw ({ status:422, message:{phone: "Account does not exist"}})
+		if(Object.keys(care).length === 0) throw ({ status:422, message:{phone: "Account does not exist"}})
+		let puid = care.puid;
 
         entropy.use(charset8)
         let Code = entropy.string().substring(0, 6);
@@ -111,38 +136,47 @@ class Profile extends csystem{
 
 		body.phone = isphone(body.phone)[0]
 
+		let tbody = {... body},ttbody = {}, i
+		for(i in tbody)ttbody[i.toLowerCase()] = tbody[i]
+
 		if(body.type === 'login') {
+			if(!ttbody.phone)throw ({ status:422, message:{code: "Please provide a phone number"}})
+			if(!ttbody.pin)throw ({ status:422, message:{code: "Please provide your pin"}})
+			if(!ttbody.code)throw ({ status:422, message:{code: "Please provide also the code received"}})
 			;[err, care] = await to (Familyfe.TelephoneProfile.whichTelephoneProfilewithCode({Telephone:body.phone}, body.code))
-			if(err) throw { message: JSON.stringify({Code:'Wrong code.'})}
-			if(!Object.keys(care).length) throw { message: JSON.stringify({Code:'Wrong code.'})}
+			if(err) throw { message: {code:'Wrong code.'}}
+			if(!Object.keys(care).length) throw { message: {code:'Wrong code.'}}
 			;[err, care] = await to(care.comparePin(body.pin))
-			if(err) throw { message: JSON.stringify({Pin:'Wrong pin.'})}
-			if(care === false) throw { message: JSON.stringify({Pin:'Wrong pin.'})}
+			if(err) throw { message: {pin:'Wrong pin.'}}
+			if(care === false) throw { message: {pin:'Wrong pin.'}}
 
 			;[err, care] = await to (Familyfe.TelephoneProfile.whichTelephoneProfile({Telephone:body.phone}))
 
 			if(!care.IsActive) {
 				// activate
 				await to (Familyfe.TelephoneProfile.update({IsActive:true}, {Telephone:body.phone}))
-				// throw { message: JSON.stringify({Phone:'Phone Number is deactivated. Please activate.'})}
 			}
-			;[err, care] =  await to (Familyfe.EmailProfile.whichPerson(care.PersonUid))
+			// console.log(care)
+			;[err, care] =  await to (Familyfe.TelephoneProfile.whichPersonfromTelephone({Telephone:body.phone}))
+			if(err) throw err
+			;[err, care] =  await to (Familyfe.EmailProfile.whichPerson(care.uid))
 			let person = care
 			person = JSON.parse(JSON.stringify(person))
+
 			let token = passport.generateToken({id:person.uid});
 			person.token = token
 			await to (Familyfe.TelephoneProfile.deleteCode(body.code))
 			res.json(person)
 		}
 		
-		else {
-			// ;[err, care] = await to(self.isAuthenticated(res, req))
-			// if(err) throw err;
-			// let authuid = care.uid
+		else {  // get code
+			if(!ttbody.phone)throw ({ status:422, message:{phone: "Please provide a phone number"}})
+			// if(!ttbody.pin)throw ({ status:422, message:{pin: "Please provide a pin"}})
+			
 			;[err, care] = await to (Familyfe.TelephoneProfile.whichTelephoneProfile({Telephone:body.phone}))
 			if(err) throw err;
-			if(care === null) throw ({ status:422, message:"User does not exist"})
-			if(Object.keys(care).length === 0) throw ({ status:422, message:"User does not exist"})
+			if(care === null) throw ({ status:422, message:{phone: "Account does not exist"}})
+			if(Object.keys(care).length === 0) throw ({ status:422, message:{phone: "Account does not exist"}})
 			let puid = care.puid;
 
 			entropy.use(charset8)
@@ -187,7 +221,7 @@ class Profile extends csystem{
 				break;
 			
 			default:
-				res.send('still building this sections');
+				res.status(422).json({error:{method:`${method} not supported`}});
 		}
     }
     

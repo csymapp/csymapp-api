@@ -47,7 +47,14 @@ class Auth extends csystem{
 	}
 	
 	async loginUsingEmailProfile(req, res, next) {
-		let self = this
+		let self = this,
+		body = req.body
+
+		let tbody = {... body},
+		ttbody = {},i
+		for(i in tbody)ttbody[i.toLowerCase()] = tbody[i]
+		if(!ttbody.email)throw ({"message":{"email": "Please provide an email address", status:422}})
+		if(!ttbody.password)throw ({"message":{"password": "Please provide a password", status:422}})
 		let __promisifiedPassportAuthentication = function () {
 		    return new Promise((resolve, reject) => {
 		        passport.authenticate('email', {session: false}, (err, user, info) => {
@@ -83,10 +90,10 @@ class Auth extends csystem{
 		
 		switch(path) {
 			case "login":
-				if(req.body.email) {
-					[err, care] = await to(self.loginUsingEmailProfile(req, res, next));
-					if(err) throw (err)
-				}
+				// if(req.body.email) {
+				[err, care] = await to(self.loginUsingEmailProfile(req, res, next));
+				if(err) throw err
+				// }
 				break;
 			
 		}
@@ -142,7 +149,7 @@ class Auth extends csystem{
 					// if(returned) {
 						// let err = err1
 						if(err) {
-							if(err.message === 'jwt expired' || err.message === 'invalid token') throw err 
+							if(err.message === 'jwt expired' || err.message === 'invalid token' || err.message==='jwt malformed') throw err 
 							;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailProfile({Email:user.emails[0].value.toLowerCase()}))
 							if(err) throw (err)
 							personuid = care.uid
@@ -310,7 +317,7 @@ class Auth extends csystem{
 					// if(returned) {
 						// let err = err1
 						if(err) {
-							if(err.message === 'jwt expired' || err.message === 'invalid token') throw err 
+							if(err.message === 'jwt expired' || err.message === 'invalid token' || err.message==='jwt malformed') throw err 
 							;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailProfile({Email:user.emails[0].value.toLowerCase()}))
 							if(err) throw (err)
 							personuid = care.uid
@@ -488,7 +495,7 @@ class Auth extends csystem{
 					// if(returned) {
 						// let err = err1
 						if(err) {
-							if(err.message === 'jwt expired' || err.message === 'invalid token') throw err 
+							if(err.message === 'jwt expired' || err.message === 'invalid token' || err.message==='jwt malformed') throw err 
 							;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailProfile({Email:user.emails[0].value.toLowerCase()}))
 							if(err) throw (err)
 							personuid = care.uid
@@ -668,7 +675,7 @@ class Auth extends csystem{
 					// if(returned) {
 						// let err = err1
 						if(err) {
-							if(err.message === 'jwt expired' || err.message === 'invalid token') throw err 
+							if(err.message === 'jwt expired' || err.message === 'invalid token' || err.message==='jwt malformed') throw err 
 							;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailProfile({Email:user.emails[0].value.toLowerCase()}))
 							if(err) throw (err)
 							personuid = care.uid
@@ -853,7 +860,7 @@ class Auth extends csystem{
 					if(errinner) return reject(errinner)
 					// if(returned) {
 						if(err) {
-							if(err.message === 'jwt expired' || err.message === 'invalid token') throw err 
+							if(err.message === 'jwt expired' || err.message === 'invalid token' || err.message==='jwt malformed') throw err 
 							;[err, care] = await to (Familyfe.EmailProfile.whichPersonwithEmailProfile({Email:user.emails[0].value.toLowerCase()}))
 							if(err) throw (err)
 							personuid = care.uid
@@ -1043,6 +1050,7 @@ class Auth extends csystem{
 		switch(method) {
 			case 'POST':
 				;[err, care] = await to(self.postedData(req, res, next));
+				console.log(err)
 				if (err) throw err
 				res.json(care)	
 				break;
@@ -1051,12 +1059,8 @@ class Auth extends csystem{
 				if (err) throw err
 				res.json(care)	
 				break;
-			case 'PATCH':
-				;[err, care] = await to(self.patchGatewayTypes(req, res));
-				if(err) throw(err)
-				break;
 			default:
-				res.send('still building this sections');
+				res.status(422).json({error:{method:`${method} not supported`}});
 		}
     }
     

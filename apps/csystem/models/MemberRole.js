@@ -14,6 +14,23 @@ module.exports = (sequelize, DataTypes) => {
 
 	})
 
+	MemberRole.associate = function (models) {
+	    MemberRole.belongsTo(models.Role, {
+	    	onDelete: "CASCADE",
+	    	onUpdate: "CASCADE",
+			foreignKey: {
+				allowNull: false
+			}
+	    });
+	    MemberRole.belongsTo(models.FamilyMember, {
+	    	onDelete: "CASCADE",
+	    	onUpdate: "CASCADE",
+			foreignKey: {
+				allowNull: false
+			}
+	    });
+	}
+
 
 	 return MemberRole;
 }

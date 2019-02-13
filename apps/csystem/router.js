@@ -84,7 +84,7 @@ class router
 			;[err, dontcare] = await to( app[func](req, res, next))
 			if(err)throw (err)			//if func is a param instead of a function, or func does not exist
 		}catch(error) {
-			console.log(error)
+			// console.log(error)
 			if(error.name === "TypeError" )
 				try {
 					;[err, dontcare] = await to( app["main"](req, res, next))
@@ -104,7 +104,7 @@ class router
  		// console.log(error)
  		error = error.code !== undefined || error.message !== undefined?error:error+''
 		 error.code === "MODULE_NOT_FOUND"?csErroHandler.error404(req, res):csErroHandler.error500(req, res, error, next)
-		 console.log(error)
+		//  console.log(error)
 		try{
 			next();
 		}catch(error){}

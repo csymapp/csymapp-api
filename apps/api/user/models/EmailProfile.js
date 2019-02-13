@@ -1,6 +1,7 @@
 'use strict'
 const Promise = require('bluebird')
 const bcrypt = Promise.promisifyAll(require('bcrypt-nodejs'))
+, validator = require('validator')
 
 async function hashPassword(user, options){
 	const SALT_FACTOR = 10
@@ -9,10 +10,10 @@ async function hashPassword(user, options){
 	}
 
 	if(!user.Cpassword)
-		return Promise.reject({code:1002, msg:JSON.stringify({Cpassword:"Please confirm your password"})});
+		return Promise.reject({code:1002, msg:{cpassword:"Please confirm your password"}});
 	if(user.Cpassword)
 		if(user.Password !== user.Cpassword)
-			return Promise.reject({code:1002, msg:JSON.stringify({Password:"Passwords don't match"})});
+			return Promise.reject({code:1002, msg:{password:"Passwords don't match", cpassword:"Passwords don't match"}});
 	return bcrypt.genSaltAsync(SALT_FACTOR)
 		.then((salt)=>bcrypt.hashAsync(user.dataValues.Password,salt, null))
 		.then(hash=>{
@@ -32,25 +33,19 @@ module.exports = (sequelize, DataTypes) => {
 			unique: true,
 			allowNull: false,
             validate: {
-                isEmail: {
-                    args: true,
-                    msg: 'Please provide a valid email address.'
-                },
-                len: {
-                    args: [1,254],
-                    msg: 'Please enter an email address shorter than 254 characters'
-                },
                 isUnique: function (value, next) {
                     var self = this;
                     Emailprofile.find({where: {Email: value}})
                         .then(function (user) {
-                            // reject if a different user wants to use the same email
-                            // if (user && self.uid !== user.uid) {
-                            //     return next('Email already in use');
-                            // }else
-							// 	return next();
+							if(validator.isEmpty(value))
+								return next({email:'Please provide an email address'});
+							if(!validator.isEmail(value))
+								return next({email:'Please provide a valid email'});
+							if(!validator.isLength(value, {min:1,max:254}))
+								return next({email:'Please enter an email address shorter than 254 characters'});
 							if(user)
-								return next(JSON.stringify({Email:'Email already in use'}));
+								// return next(JSON.stringify({Email:'Email already in use'}));
+								return next({email:'Email already in use'});
 							else return next();
                         })
                         .catch(function (err) {

@@ -5,6 +5,8 @@
 const express 	= require('express')
 , app         = express()
 , bodyParser  = require('body-parser')
+, multer = require('multer')() 
+// , formData = require("express-form-data")
 , morgan      = require('morgan')
 , to = require('await-to-js').to
 , chalk = require('chalk')
@@ -56,6 +58,9 @@ app.use(morgan('combined'));
 // use body parser so we can get info from POST and/or URL parameters
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(multer.array());
+// app.use(formData.parse());
+// app.use(formData.union());
 //cross-origin, not needed now
 app.use(cors())
 
@@ -122,7 +127,7 @@ app.route('*')
  * Error Handler
  */
 app.use(function(err, req, res, next) {
-  csErroHandler.error500(err, req, res, app.get("env"), function(err){
+  csErroHandler.error500(req, res, err, function(err){
     next(err);
   });
   

@@ -15,18 +15,23 @@ class Profile extends csystem{
     async patchLinkedInProfile(req, res) {
 		let self = this;
 		let luid = req.params.v1
+		if(!luid)throw ({ status:422, message:{luid: "Please provide luid to modify"}})
+
 		let [err, care] = []
 		;[err, care] = await to(self.isAuthenticated(res, req))
 		if(err) throw err;
 		let authuid = care.uid
 		// console.log(req.params)
 		;[err, care] = await to (Familyfe.LinkedinProfile.whichPersonwithLuid(luid))
-		if(care === null) throw ({ status:422, message:"can't set for another user"})
+		if(err)throw ({ status:422, message:{Permission: "You are not allowed to modify that account"}})
+		if(Object.keys(care).length === 0)throw ({ status:422, message:{github: "Profile not found"}})
 		let uidtoMod = care.uid;
-		if(authuid !== uidtoMod)throw ({ status:422, message:"can't set for another user"})
-		
 		if (authuid !== uidtoMod) {
-			throw ({ status:422, message:"can't set for another user"})
+			let [_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", 1, authuid))
+			if(_err)throw ({ status:422, message:{Permission: "You are not allowed to modify that account"}})
+
+			if(!csyAdmin)
+				throw ({ status:422, message:{Permission: "You are not allowed to modify that account"}})
 		}
 
 		
@@ -42,19 +47,23 @@ class Profile extends csystem{
     async deleteLinkedinProfile(req, res) {
 		let self = this;
 		let luid = req.params.v1
-		
+		if(!luid)throw ({ status:422, message:{luid: "Please provide luid to modify"}})
+
 		let [err, care] = []
 		;[err, care] = await to(self.isAuthenticated(res, req))
 		if(err) throw err;
 		let authuid = care.uid
 		;[err, care] = await to (Familyfe.LinkedinProfile.whichPersonwithLuid(luid))
-		if(care === null) throw ({ status:422, message:"can't set for another user"})
+		if(err)throw ({ status:422, message:{Permission: "You are not allowed to delete that account"}})
+		if(Object.keys(care).length === 0)throw ({ status:422, message:{github: "Profile not found"}})
 		let uidtoMod = care.uid;
 		
-		if(authuid !== uidtoMod)throw ({ status:422, message:"can't set for another user"})
-
 		if (authuid !== uidtoMod) {
-			throw ({ status:422, message:"can't set for another user"})
+			let [_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", 1, authuid))
+			if(_err)throw ({ status:422, message:{Permission: "You are not allowed to delete that account"}})
+
+			if(!csyAdmin)
+				throw ({ status:422, message:{Permission: "You are not allowed to delete that account"}})
 		}
 
 		let data = JSON.parse(JSON.stringify(req.body))
@@ -86,7 +95,7 @@ class Profile extends csystem{
 				break;
 			
 			default:
-				res.send('still building this sections');
+				res.status(422).json({error:{method:`${method} not supported`}});
 		}
     }
     
