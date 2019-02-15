@@ -15,6 +15,7 @@ csystem = require(__dirname+"/../csystem").csystem,
 ,LinkedinProfile = require(__dirname+"/profiles/linkedin")
 ,TelephoneProfile = require(__dirname+"/profiles/telephone")
 ,Apps = require(__dirname+"/app/")
+,Family = require(__dirname+"/family/")
 
 class csymapp extends csystem {
 
@@ -93,6 +94,13 @@ class csymapp extends csystem {
         let self = this
         let [err, care] = [];
         ;[err, care] = await to(Apps.main(req, res, next));
+        if(err) throw (err)
+    }
+
+    async family(req, res, next) {
+        let self = this
+        let [err, care] = [];
+        ;[err, care] = await to(Family.main(req, res, next));
         if(err) throw (err)
     }
 

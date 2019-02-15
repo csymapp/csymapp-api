@@ -15,7 +15,7 @@ class Profile extends csystem{
     async patchGithubProfile(req, res) {
 		let self = this;
 		let gituid = req.params.v1
-		if(!gituid)throw ({ status:422, message:{gituid: "Please provide phoneid to modify"}})
+		if(!gituid)throw ({ status:422, message:{gituid: "Please provide gituid to modify"}})
 
 		let [err, care] = []
 		;[err, care] = await to(self.isAuthenticated(res, req))
@@ -46,7 +46,7 @@ class Profile extends csystem{
     async deleteGithubProfile(req, res) {
 		let self = this;
 		let gituid = req.params.v1
-		if(!gituid)throw ({ status:422, message:{gituid: "Please provide phoneid to modify"}})
+		if(!gituid)throw ({ status:422, message:{gituid: "Please provide gituid to modify"}})
 		let [err, care] = []
 		;[err, care] = await to(self.isAuthenticated(res, req))
 		if(err) throw err;

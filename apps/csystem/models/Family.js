@@ -1,4 +1,8 @@
 'use strict'
+const Promise = require('bluebird')
+const bcrypt = Promise.promisifyAll(require('bcrypt-nodejs'))
+, validator = require('validator')
+
 module.exports = (sequelize, DataTypes) => {
 	const Family = sequelize.define('Family', {
 		FamilyId: {
@@ -6,10 +10,28 @@ module.exports = (sequelize, DataTypes) => {
 			primaryKey: true,
 			autoIncrement: true
 		},
-		FamilyName: {
-			type: DataTypes.STRING(32),
-			allowNull: false
-		}
+		FamilyName:{
+			type: DataTypes.STRING(32).BINARY,
+			// unique: true,
+			// allowNull: false
+            validate: {
+				isUnique: function (value, next) {
+					var self = this;
+					Family.find({where: {FamilyName: value}})
+						.then(function (user) {
+							if(user){
+								return next({family:'Family already exists'});
+							}
+							else return next();
+						})
+						.catch(function (err) {
+							console.log(err)
+							return next(err);
+						});
+					}
+				}
+		},
+
 	},
 	{
 		hooks: {

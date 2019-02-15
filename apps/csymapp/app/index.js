@@ -43,6 +43,7 @@ class App extends csystem{
         
         let person = care.uid
         ;[err, care] = await to(Familyfe.Person.hasRole('root', 'csystem', person, 1))
+        //Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", 1, myuid))
         if(err) throw err
         if(Object.keys(care).length === 0){
             throw ('permission denied')
@@ -91,11 +92,17 @@ class App extends csystem{
         }
         
         let person = care.uid
-        ;[err, care] = await to(Familyfe.Person.hasRole('root', 'csystem', person, 1))
-        if(err) throw err
-        if(Object.keys(care).length === 0){
-            throw ('permission denied')
-        } 
+        // ;[err, care] = await to(Familyfe.Person.hasRole('root', 'csystem', person, 1))
+        // if(err) throw err
+        // if(Object.keys(care).length === 0){
+        //     throw ('permission denied')
+        // } 
+        let [_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", 1, person))
+        if(_err)throw ({ status:422, message:{Permission: "You are not allowed to modify that app"}})
+
+        if(!csyAdmin)
+            throw ({ status:422, message:{Permission: "You are not allowed to modify that app"}})
+        
         // is csystem Admin
         // now list csystem applications...
         ;[err, care] = await to(Familyfe.apps.listAllApps())
@@ -110,17 +117,24 @@ class App extends csystem{
         , body = req.body
         , app = req.params.v1
 
+        if(!app)throw ({ status:422, message:{app: "Please provide the app to modify"}})
+
         ;[err, care] = await to(self.isAuthenticated(res, req))
         if(err) {
             throw err
         }
         
         let person = care.uid
-        ;[err, care] = await to(Familyfe.Person.hasRole('root', 'csystem', person, 1))
-        if(err) throw err
-        if(Object.keys(care).length === 0){
-            throw ('permission denied')
-        } 
+        // ;[err, care] = await to(Familyfe.Person.hasRole('root', 'csystem', person, 1))
+        // if(err) throw err
+        // if(Object.keys(care).length === 0){
+        //     throw ('permission denied')
+        // } 
+        let [_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", 1, person))
+        if(_err)throw ({ status:422, message:{Permission: "You are not allowed to modify that app"}})
+
+        if(!csyAdmin)
+            throw ({ status:422, message:{Permission: "You are not allowed to modify that app"}})
         // is csystem Admin
         // now list csystem applications...
         ;[err, care] = await to(Familyfe.apps.delete({AppName:app}))
@@ -197,9 +211,6 @@ class App extends csystem{
 				res.send('still building this sections');
 		}
     }
-    
-
-
 
 }
 

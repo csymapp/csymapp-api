@@ -44,7 +44,6 @@ module.exports = (sequelize, DataTypes) => {
 							if(!validator.isLength(value, {min:1,max:254}))
 								return next({email:'Please enter an email address shorter than 254 characters'});
 							if(user)
-								// return next(JSON.stringify({Email:'Email already in use'}));
 								return next({email:'Email already in use'});
 							else return next();
                         })

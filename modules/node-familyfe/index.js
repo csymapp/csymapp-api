@@ -914,15 +914,210 @@ class Family extends abstractFamily {
 			if (hierarchyLevel < 2) hierarchyLevel = 2
 			if (parentFamilyId === null) parentFamilyId = 1
 		}
-		// console.log('going to create..')
 		let [err, care] = await to(self.sequelize.models.Family.create({
 			FamilyName,
 			hierarchyLevel,
 			parentFamilyId
 		}))
-		if (err) throw err;
+		if (err){
+			if(err.errors[0].message){
+				throw {message:err.errors[0].message, status:422}
+			}
+			else throw err
+		}
 		if (care === null) throw 'Missing familyId'
 		return care.dataValues.FamilyId;
+	}
+
+	async getFamilyHierarchy(FamilyId) {
+		let self = this
+		let [err, care] = [];
+		;[err, care] = await to(self.sequelize.models.Family.findOne({
+			where: {
+				FamilyId
+			},
+			attributes: ["hierarchyLevel"]
+		}, ))
+		if (err) throw err;
+		if (care === null)return false
+		return care.dataValues.hierarchyLevel
+	}
+
+	async update(data, where) {
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Family.update(data, {
+			where: where,
+			individualHooks: true
+		}))
+		if (err){
+			if(err.errors[0].message){
+				throw {message:err.errors[0].message, status:422}
+			}
+			else throw err
+		}
+		if (care === null) return {}
+		return care
+	}
+	async delete(where) {
+		let self = this
+		let [err, care] = await to(self.sequelize.models.Family.destroy({where}))
+		if (err){
+			throw err
+		}
+		if (care === null) return {}
+		return care
+	}
+
+	deepSearch (object, key, predicate) {
+		let self = this
+		if (object.hasOwnProperty(key) && predicate(key, object[key]) === true) return object
+	
+		for (let i = 0; i < Object.keys(object).length; i++) {
+		  if (typeof object[Object.keys(object)[i]] === "object") {
+			let o = self.deepSearch(object[Object.keys(object)[i]], key, predicate)
+			if (o != null) return o
+		  }
+		}
+	
+		return null
+	}
+
+	search (needle, haystack, found = []) {
+		let self = this
+		Object.keys(haystack).forEach((key) => {
+		  if(key === needle){
+			found.push(haystack[key]);
+			return found;
+		  }
+		  if(typeof haystack[key] === 'object'){
+			self.search(needle, haystack[key], found);
+		  }
+		});
+		return found;
+	  };
+
+	async memberHasRoleinFamilyforApp(app, role, family, uid){
+		let self = this
+		family = parseInt(family)
+		
+		/// get entire hierarchy as a flat list
+		// let [err, care] = await to(self.sequelize.models.Family.findAll())
+
+		// get entire hierarchy as a nested tree
+		// let [err, care] = await to(self.sequelize.models.Family.findAll({ hierarchy: true }))
+
+
+		// let [err, care] = await to(self.sequelize.models.FamilyMember.findAll(
+		// 		{
+		// 			where: {
+		// 				PersonUid: uid,
+		// 				// FamilyFamilyId: family
+		// 			},
+					// include:[
+					// 	{
+					// 		model:self.sequelize.models.Family,
+					// 		// where: { FamilyId: family },
+					// 		// hierarchy:true,
+					// 		include: {
+					// 			model: self.sequelize.models.Family,
+					// 			as: 'descendents',
+					// 			hierarchy: true,
+					// 			where: { FamilyId: family }
+					// 		}
+					// 	}
+					// ]
+		// 		}
+		// 	))
+
+		let [err, care] = await to(self.sequelize.models.MemberRole.findAll({
+			include: [
+				{
+					model: self.sequelize.models.Role,
+					where: {
+						Role: role
+					},
+					include: [{
+						model: self.sequelize.models.App,
+						where: app
+					}]
+				},
+				{
+					model: self.sequelize.models.FamilyMember,
+					where: {
+						PersonUid: uid
+					},
+					include:[
+						{
+							model:self.sequelize.models.Family,
+							include: [{
+								model: self.sequelize.models.Family,
+								as: 'descendents',
+								hierarchy: true,
+								// where: { FamilyId: family }
+							}]
+						}
+					]
+				}
+			]
+		}, ))
+
+		if(err) throw err
+		let tmp = JSON.parse(JSON.stringify(care)),
+		ret
+		tmp = JSON.parse(JSON.stringify(tmp, (k,v) => (k === 'parentFamilyId')? undefined : v))
+		// try{
+			ret = self.deepSearch(tmp, 'FamilyId',  (k, v) => v === family)
+		// }catch(err){console.log(err)}
+		if(ret === null) return false
+		return true
+
+	}
+
+	async getChildren(family) {
+		let self = this
+		family = parseInt(family)
+		// get all the descendents of a particular item
+		let [err, care] = await to(self.sequelize.models.Family.findAll(
+			{
+				where: { FamilyId: family},
+				include: {
+					model: self.sequelize.models.Family,
+					as: 'descendents',
+					hierarchy: true,
+					// where: { FamilyId: family}
+				}
+			}
+		))
+		if(err) throw err
+
+		return care
+		
+	}
+	async getFathers(family) {
+		let self = this
+		//get all the ancestors (i.e. parent and parent's parent and so on)
+		// let [err, care] = await to(self.sequelize.models.Family.find(
+		// 		{
+		// 			where: { FamilyId: 4 },
+		// 			include: {
+		// 				model: self.sequelize.models.Family,
+		// 				as: 'ancestors',
+		// 			},
+		// 			order: [ [ { model: self.sequelize.models.Family, as: 'ancestors' }, 'hierarchyLevel' ] ]
+		// 		}
+		// ))
+		let [err, care] = await to(self.sequelize.models.Family.findAll(
+			{
+				where: { FamilyId: family },
+				include: {
+					model: self.sequelize.models.Family,
+					as: 'ancestors',
+				},
+				order: [ [ { model: self.sequelize.models.Family, as: 'ancestors' }, 'hierarchyLevel' ] ]
+			}
+		))
+		if(err) throw err
+		return care
 	}
 
 	async getApps(family) {
@@ -976,21 +1171,19 @@ class Family extends abstractFamily {
 			}]
 		}, ))
 		let ret = [];
-		// console.log(err)
 		if (err) throw (err)
 		if (care === null) throw "nothing found"
-		// console.log(err)
-		// console.log(JSON.stringify(care))
 		for (let i in care)
 			ret.push(care[i].dataValues)
 		return JSON.parse(JSON.stringify(ret))
 	}
 
-	async memberHasRoleinFamilyforApp(app, role, family, uid) {
+	async memberHasRoleinFamilyforApp_vold(app, role, family, uid) {
 		let self = this
 		let [err, care] = [];
 		[err, care] = await to(self.sequelize.models.MemberRole.findOne({
-			include: [{
+			include: [
+				{
 					model: self.sequelize.models.Role,
 					where: {
 						Role: role
@@ -1002,23 +1195,16 @@ class Family extends abstractFamily {
 				},
 				{
 					model: self.sequelize.models.FamilyMember,
-					include: [{
-							model: self.sequelize.models.Family,
-							where: {
-								FamilyId: family
-							}
-						},
-						{
-							model: self.sequelize.models.Person,
-							where: {
-								uid
-							}
-						}
-					]
+					where: {
+						PersonUid: uid,
+						FamilyFamilyId: family
+					}
 				}
 			]
 		}, ))
+
 		if (care === null) return false
+		if (!care.dataValues.FamilyMember) return false
 		return true
 	}
 
@@ -1045,11 +1231,8 @@ class Family extends abstractFamily {
 			}]
 		}, ))
 		let ret = [];
-		// console.log(err)
 		if (err) throw (err)
 		if (care === null) return false
-		// console.log(err)
-		// console.log(JSON.stringify(care))
 		for (let i in care)
 			ret.push(care[i].dataValues)
 		return JSON.parse(JSON.stringify(ret))

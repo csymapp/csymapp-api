@@ -21,7 +21,8 @@ class User extends csystem{
 		let uid = req.params.v1
 		let [err, care] = []
 
-		let isAuthorization = (req.headers.authorization || token)?true:false
+		// let isAuthorization = (req.headers.authorization || token)?true:false
+		let isAuthorization = (req.headers.authorization)?true:false
 
 		let isLogged ;
 		let body = JSON.parse(JSON.stringify(req.body))
@@ -79,6 +80,7 @@ class User extends csystem{
 					IsActive:true,
 					Families: [2]
 				}))
+				console.log(err)
 				if(err) throw err
 				entropy.use(charset8)
 				let Code = entropy.string().substring(0, 8);

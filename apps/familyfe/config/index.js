@@ -11,7 +11,7 @@ const criteria = {
 
 
 const config = {
-    name:"testator",
+    name:"familyfe",
     displayname:false,      // || or false if it should not be shown in app list
 	// url:"csystem/app/elements",
 	enabled: {    // require this from db
@@ -24,9 +24,14 @@ const config = {
         "nobody",
         "guest",
         "user",
-        "root"
+        "cousin",
+        "uncle",
+        "child",
+        "parent",
+        "root",
+        "cyroot",
     ], 
-    AutoInstall: false,
+    AutoInstall: true,
     "canuninstall":
     {
         root:false,

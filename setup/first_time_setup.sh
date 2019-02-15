@@ -172,7 +172,7 @@ checkDependency? () {
 }
 
 setupDefaultUsers? () {
-	cd ./setup
+	# cd ./setup
 	echo $PWD
 	node first_time_setup.js
 }

@@ -58,7 +58,8 @@ class Profile extends csystem{
 		let tbody = {... body},ttbody = {},i
 		for(i in tbody)ttbody[i.toLowerCase()] = tbody[i]
 		data = {}
-		if(ttbody.IsActive)data["IsActive"] = ttbody.IsActive
+		// if(ttbody.IsActive)data["IsActive"] = ttbody.IsActive
+		if(ttbody.isactive !== undefined)data["IsActive"] = ttbody.isactive
 		if(ttbody.pin)data["Pin"] = ttbody.pin
 		if(ttbody.cpin)data["Cpin"] = ttbody.pin
 

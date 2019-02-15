@@ -22,6 +22,7 @@ const config = {
     Enabled: true,
     groups: [               // or role
         "nobody",
+        "guest",
         "user",
         "root"
     ], 

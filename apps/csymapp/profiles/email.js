@@ -44,7 +44,7 @@ class Profile extends csystem{
 		let tbody = {... body},ttbody = {},i
 		for(i in tbody)ttbody[i.toLowerCase()] = tbody[i]
 		data = {}
-		if(ttbody.IsActive)data["IsActive"] = ttbody.IsActive
+		if(ttbody.isactive !== undefined)data["IsActive"] = ttbody.isactive
 		if(ttbody.password)data["Password"] = ttbody.password
 		if(ttbody.cpassword)data["Cpassword"] = ttbody.cpassword
 		;[err, care] = await to (Familyfe.EmailProfile.update(data, {emailuid:emailid}))
