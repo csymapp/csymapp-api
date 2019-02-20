@@ -1,163 +1,308 @@
 'use strict'
-const to = require('await-to-js').to
-,passport = require('passport')
-,csystem = require(__dirname+"/../../csystem").csystem
-,{sequelize} = require(__dirname+"/../../csystem").models
-,Familyfe = require(__dirname+'/../../../modules/node-familyfe')(sequelize)
+const to = require('await-to-js').to,
+	passport = require('passport'),
+	csystem = require(__dirname + "/../../csystem").csystem,
+	{
+		sequelize
+	} = require(__dirname + "/../../csystem").models,
+	Familyfe = require(__dirname + '/../../../modules/node-familyfe')(sequelize)
 
-class App extends csystem{
+class App extends csystem {
 
 	constructor() {
 		super()
-    }
+	}
 
-    async main(req, res){
+	async main(req, res) {
 		let self = this;
 		let method = req.method;
-		let [err, care] = []
-		,body = req.body
-		, ttbody = {}
+		let [err, care] = [], body = req.body, ttbody = {}
 
-		for(let i in body)ttbody[i.toLowerCase()] = body[i]
+		for (let i in body) ttbody[i.toLowerCase()] = body[i]
 		req.ttbody = ttbody
-		
-		;[err, care] = await to(self.isAuthenticated(res, req))
-		if(err) throw err;
+
+		;
+		[err, care] = await to(self.isAuthenticated(res, req))
+		if (err) throw err;
 		let authuid = care.uid
 		req.authuid = authuid
-        			
-		switch(method) {
-            case 'POST':
-				;[err, care] = await to(self.postFamily(req, res));
+
+		switch (method) {
+			case 'POST':
+				;
+				[err, care] = await to(self.postApp(req, res));
 				if (err) throw err
-				res.json(care)	
+				res.json(care)
+				break;
+
+			case 'PATCH':
+				;
+				[err, care] = await to(self.patchApp(req, res));
+				if (err) throw err
+				res.json(care)
+				break;
+
+			case 'GET':
+				[err, care] = await to(self.getApp(req, res));
+				if (err) throw err
+				res.json(care)
 				break;
 			
-            case 'PUT':
-				;[err, care] = await to(self.putFamily(req, res));
+			case 'DELETE':
+				[err, care] = await to(self.deleteApp(req, res));
 				if (err) throw err
-				res.json(care)	
+				res.json(care)
 				break;
-			
-            case 'DELETE':
-				;[err, care] = await to(self.deleteFamily(req, res));
-				if (err) throw err
-				res.json(care)	
-				break;
-			
-            case 'GET':
-				;[err, care] = await to(self.getFamily(req, res));
-				if (err) throw err
-				res.json(care)	
-				break;
-			
-			
+
+
 			default:
-				res.status(422).json({error:{method:`${method} not supported`}});
+				res.status(422).json({
+					error: {
+						method: `${method} not supported`
+					}
+				});
 		}
-    }
+	}
 
-    async postFamily(req, res) {
-		let ancestorFamily = req.params.v1 || 2 // put in default into World family
-		,body = req.body
-		, ttbody =  req.ttbody
-		, authuid = req.authuid
-		, [err, care] = []
-		, familyName = ttbody.familyname
+	async postApp(req, res) {
+		let appid = req.params.v1,
+			body = req.body,
+			ttbody = req.ttbody,
+			authuid = req.authuid,
+			[err, care] = [],
+			familyid = ttbody.familyid
 
-		if(!familyName)throw ({ status:422, message:{Permission: `Please provide family name`}})
+		if (!appid) throw ({
+			status: 422,
+			message: {
+				appid: `Please provide appid`
+			}
+		})
+		if (!ttbody.familyid) throw ({
+			status: 422,
+			message: {
+				familyid: `Please provide familyid`
+			}
+		})
+		
+		if (!parseInt(appid)) throw ({
+			status: 422,
+			message: {
+				appid: `Please provide a valid appid`
+			}
+		})
+		if (!parseInt(ttbody.familyid)) throw ({
+			status: 422,
+			message: {
+				familyid: `Please provide a valid familyid`
+			}
+		})
+		
 
-		let [_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", ancestorFamily, authuid)) // or any higher family...
-		if(_err)throw ({ status:422, message:{Permission: `You are not allowed to modify family ${ancestorFamily}`}})
-		if(!csyAdmin)throw ({ status:422, message:{Permission: `You are not allowed to modify family ${ancestorFamily}`}})
+		let [_err, csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({
+			AppName: "csystem"
+		}, "root", parseInt(familyid), authuid))
+		if (_err) throw ({
+			status: 422,
+			message: {
+				Permission: `You are not allowed to modify family ${familyid}`
+			}
+		})
+		if (!csyAdmin) throw ({
+			status: 422,
+			message: {
+				Permission: `You are not allowed to modify family ${familyid}`
+			}
+		})
 
-		;[err, care] = await to(Familyfe.Family.getFamilyHierarchy(ancestorFamily))
-		if(err)throw err
-		let parentHierarchy = care;
-
-		;[err, care] = await to(Familyfe.Family.create({
-			FamilyName:familyName,
-	    	hierarchyLevel:parentHierarchy+1,
-	    	parentFamilyId: ancestorFamily
-		}))
-		if(err){
-			throw err
-		}
-		;[err, care] = await to(Familyfe.Family.getFathers(care))
+		// Install app for familyid
+		;[err, care] = await to(Familyfe.Apps.installforFamily(parseInt(appid), familyid));
 		if(err) throw err
-		return care		
+		return care
 	}
+
 	
-	
-    async putFamily(req, res) {
-		let familyId = req.params.v1
-		,body = req.body
-		, ttbody =  req.ttbody
-		, authuid = req.authuid
-		, [err, care] = []
-		, familyName = ttbody.familyname
+	async deleteApp(req, res) {
+		let appid = req.params.v1,
+			body = req.body,
+			ttbody = req.ttbody,
+			authuid = req.authuid,
+			[err, care] = [],
+			familyid = ttbody.familyid
 
-		if(!familyId)throw ({ status:422, message:{Permission: `Please provide familyid`}})
-		if(!familyName)throw ({ status:422, message:{Permission: `Please provide family name`}})
+		if (!appid) throw ({
+			status: 422,
+			message: {
+				appid: `Please provide appid`
+			}
+		})
+		if (!ttbody.familyid) throw ({
+			status: 422,
+			message: {
+				familyid: `Please provide familyid`
+			}
+		})
+		
+		if (!parseInt(appid)) throw ({
+			status: 422,
+			message: {
+				appid: `Please provide a valid appid`
+			}
+		})
+		if (!parseInt(ttbody.familyid)) throw ({
+			status: 422,
+			message: {
+				familyid: `Please provide a valid familyid`
+			}
+		})
+		
 
-		let [_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", familyId, authuid))
-		if(_err)throw ({ status:422, message:{Permission: `You are not allowed to modify family ${familyId}`}})
-		if(!csyAdmin)throw ({ status:422, message:{Permission: `You are not allowed to modify family ${familyId}`}})
+		let [_err, csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({
+			AppName: "csystem"
+		}, "root", parseInt(familyid), authuid))
+		if (_err) throw ({
+			status: 422,
+			message: {
+				Permission: `You are not allowed to modify family ${familyid}`
+			}
+		})
+		if (!csyAdmin) throw ({
+			status: 422,
+			message: {
+				Permission: `You are not allowed to modify family ${familyid}`
+			}
+		})
+
+		// Install app for familyid
+		;[err, care] = await to(Familyfe.Apps.deletefromFamily(parseInt(appid), familyid));
+		if(err) throw err
+		return care
+	}
 
 
-		;[err, care] = await to(Familyfe.Family.update({FamilyName:familyName}, {FamilyId:familyId}))
-		if(err){
+
+	async patchApp(req, res) {
+		let appid = req.params.v1,
+			body = req.body,
+			ttbody = req.ttbody,
+			authuid = req.authuid,
+			[err, care] = []
+
+		if (!appid) throw ({
+			status: 422,
+			message: {
+				appid: `Please provide appid`
+			}
+		})
+		
+
+		let [_err, csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({
+			AppName: "csystem"
+		}, "root", 1, authuid))
+		if (_err) throw ({
+			status: 422,
+			message: {
+				Permission: `You are not allowed to modify app ${appid}`
+			}
+		})
+		if (!csyAdmin) throw ({
+			status: 422,
+			message: {
+				Permission: `You are not allowed to modify app ${appid}`
+			}
+		})
+
+		let updates = {}
+		if(ttbody.enabled !== undefined) {
+			if(ttbody.enabled !== false && ttbody.enabled !== true) throw ({
+				status: 422,
+				message: {
+					Enabled: `Invalid ${ttbody.enabled} for Enabled`
+				}})
+			updates["Enabled"] = ttbody.enabled
+		}
+		
+		// try{
+		
+		;[err, care] = await to(Familyfe.Apps.update(updates, {
+			AppId: appid
+		}))
+		if (err) {
 			throw err
 		}
-		return care		
+		return care
 	}
+
 	
-    async deleteFamily(req, res) {
-		let familyId = req.params.v1
-		,body = req.body
-		, ttbody =  req.ttbody
-		, authuid = req.authuid
-		, [err, care] = []
+	async getApp(req, res) {
+		let familyId = req.params.v1,
+			body = req.body,
+			ttbody = req.ttbody,
+			authuid = req.authuid,
+			[err, care] = [],
+			self = this
+		// try{
 
-		if(!familyId)throw ({ status:422, message:{Permission: `Please provide familyid`}})
+		// if(!familyId) { 
+		// list all apps in the system,using filters in ttbody
+		let where = {},
+			whereInner = {};
+		if (ttbody.appid) where['AppId'] = ttbody.appid
+		if (ttbody.appname) where['AppName'] = ttbody.appname
+		if (ttbody.enabled !== undefined) where['Enabled'] = ttbody.enabled
+		// if familyid, then user ought to be member of that family. Otherwise if user is csyadmin, then just show everything, otherwise show only numbers
+		if (ttbody.familyid) whereInner['FamilyFamilyId'] = ttbody.familyid;
+		[err, care] = await to(Familyfe.Apps.getAllAppsv1(where, whereInner));
+		if (err) throw err
+		if (care === undefined) return {}
 
-		let [_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", familyId, authuid))
-		if(_err)throw ({ status:422, message:{Permission: `You are not allowed to modify family ${familyId}`}})
-		if(!csyAdmin)throw ({ status:422, message:{Permission: `You are not allowed to modify family ${familyId}`}})
+		care = JSON.parse(JSON.stringify(care))
 
-		familyId = parseInt(familyId)
-		if(familyId === 1 || familyId === 2)throw ({ status:422, message:{Permission: `No one is allowed to delete family ${familyId}`}})
+		for (let i in care)
+			care[i].numFamilies = care[i].InstalledApps.length
 
-		;[err, care] = await to(Familyfe.Family.delete({FamilyId:familyId}))
-		if(err){
-			throw err
+		let [err1, care1] = await to(self.isAuthenticated(res, req))
+		let myuid = care1.uid
+		if (ttbody.familyid) {
+			let [_err, csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({
+				AppName: "csystem"
+			}, "root", parseInt(ttbody.familyid), myuid))
+			if (_err) throw ({
+				status: 500,
+				message: {
+					Permission: "Unknown error. Please try again"
+				}
+			})
+
+			if (!csyAdmin)
+				throw ({
+					status: 422,
+					message: {
+						Permission: `You are not allowed to view family ${ttbody.familyid}`
+					}
+				})
+		} else {
+			let [_err, csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({
+				AppName: "csystem"
+			}, "root", 1, myuid))
+			if (_err) throw ({
+				status: 500,
+				message: {
+					Permission: "Unknown error. Please try again"
+				}
+			})
+
+			if (!csyAdmin) {
+				care = JSON.parse(JSON.stringify(care, (k, v) => (k === 'InstalledApps') ? undefined : v))
+			} else {
+
+			}
+
 		}
-		return care		
+		return care
+		
 	}
-    async getFamily(req, res) {
-		let familyId = req.params.v1
-		,body = req.body
-		, ttbody =  req.ttbody
-		, authuid = req.authuid
-		, [err, care] = []
 
-		if(!familyId)throw ({ status:422, message:{Permission: `Please provide familyid`}})
-
-		familyId = parseInt(familyId)
-		let [_err,csyAdmin] = await to(Familyfe.Family.memberHasRoleinFamilyforApp({AppName:"csystem"}, "root", familyId, authuid))
-		if(_err)throw ({ status:422, message:{Permission: `You are not allowed to view family ${familyId}`}})
-		if(!csyAdmin)throw ({ status:422, message:{Permission: `You are not allowed to view family ${familyId}`}})
-
-		let direction = ttbody.direction || 'down'
-		if(direction === 'down')
-			[err, care] = await to(Familyfe.Family.getChildren(familyId))
-		else [err, care] = await to(Familyfe.Family.getFathers(familyId))
-		if(err){
-			throw err
-		}
-		return care		
-	}
-	
 
 
 }

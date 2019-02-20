@@ -6,6 +6,7 @@ csystem = require(__dirname+"/../csystem").csystem,
 ,Familyfe = require(__dirname+'/../../modules/node-familyfe')(sequelize)
 ,Role = require(__dirname+"/role/")
 ,Family = require(__dirname+"/family/")
+,App = require(__dirname+"/app/")
 ,Member = require(__dirname+"/member/")
 
 class familyfe extends csystem {
@@ -20,12 +21,6 @@ class familyfe extends csystem {
 		let endpoints = await self.getRoutes(__dirname)
 		res.json(endpoints)
     }
-    
-    async role(req, res, nex) {
-        let [err, care] = [];
-        ;[err, care] = await to(Role.main(req, res));
-        if(err) throw (err)
-    }
 
     async family(req, res, next) {
         let [err, care] = [];
@@ -36,6 +31,17 @@ class familyfe extends csystem {
     async member(req, res, next) {
         let [err, care] = [];
         ;[err, care] = await to(Member.main(req, res, next));
+        if(err) throw (err)
+    }
+
+    async app(req, res, next) {
+        let [err, care] = [];
+        ;[err, care] = await to(App.main(req, res, next));
+        if(err) throw (err)
+    }
+    async role(req, res, next) {
+        let [err, care] = [];
+        ;[err, care] = await to(Role.main(req, res, next));
         if(err) throw (err)
     }
 }

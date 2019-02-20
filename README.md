@@ -93,9 +93,9 @@ Please see the [docs](docs/TOC.md) on how to create applications using csymapp.
     - [x] local (email)
     - [x] facebook
     - [x] github
-    - [ ] google
-    - [ ] twitter
-- Redirect after login
+    - [x] google
+    - [x] twitter
+-  [x] Redirect after login
     - [x] Github
 **[⬆ back home](#table-of-contents)**
 

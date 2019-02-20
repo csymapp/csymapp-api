@@ -165,7 +165,6 @@ class Profile extends csystem{
 
 		switch(profileType){
 			case "github":
-				console.log("llllllll")
 				self.addGithubProfile(req);
 		}
 

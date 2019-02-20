@@ -1322,6 +1322,21 @@ class Family extends abstractFamily {
 		return care;
 	}
 
+	
+	async deleteMember(family, member) {
+		let self = this
+		let [err, care] = []
+		;[err, care] = await to(self.sequelize.models.FamilyMember.destroy({where: {
+				"PersonUid": member,
+				"FamilyFamilyId": family
+		}}))
+
+		if (err) throw (err);
+		return care;
+	}
+
+
+
 	async getMembers(family) {
 		let self = this
 		let [err, care] = []
@@ -1365,6 +1380,144 @@ class Family extends abstractFamily {
 
 		return care.dataValues.FamilyMemberId
 	}
+
+	async memberBelongstoFamily(family, member){
+		let self = this
+		let [err, care] = []
+
+		;[err, care] = await to(self.sequelize.models.FamilyMember.findOne({
+			where: {
+				"FamilyMemberId": member,
+				"FamilyFamilyId": family
+			},
+			
+		}))
+		if (err) throw (err);
+		if (care === null) return false
+		return care
+	}
+
+	async getMemberRoles(familymemberId, whereRole = true) {
+		let self = this
+		let [err, care] = []
+
+	// 	console.log("start")
+	// 	try{
+	// 	;[err, care] = await to(self.sequelize.models.FamilyMember.findAll({
+			
+	// 		include:[ {
+	// 			model:	self.sequelize.models.MemberRole,
+	// 			where: {
+	// 				"FamilyMemberFamilyMemberId": familymemberId
+	// 			},
+	// 			attributes: ['FamilyMemberFamilyMemberId'],
+	// 			include: [
+	// 				{
+	// 					model:self.sequelize.models.Role,
+	// 					where: whereRole,
+	// 					attributes: ['RoleId', 'Role'],
+	// 					include: [
+	// 						{
+	// 							model: self.sequelize.models.App,
+	// 							attributes: ['AppName', 'AppId']
+	// 						}
+	// 					]
+	// 				},
+	// 				{
+	// 					model:self.sequelize.models.FamilyMember,
+	// 					attributes: ['FamilyMemberId'],
+	// 					include: [
+	// 						{
+	// 							model: self.sequelize.models.Family,
+	// 							attributes: ['FamilyId', 'FamilyName']
+	// 						}
+	// 					]
+	// 				}
+	// 			]
+	// 		}]
+	// 	}))
+	// }catch(error){console.log(error)}
+	// 	console.log(err)
+		;[err, care] = await to(self.sequelize.models.MemberRole.findAll({
+			where: {
+				"FamilyMemberFamilyMemberId": familymemberId
+			},
+			attributes: ['FamilyMemberFamilyMemberId'],
+			include: [
+				{
+					model:self.sequelize.models.Role,
+					where: whereRole,
+					attributes: ['RoleId', 'Role'],
+					include: [
+						{
+							model: self.sequelize.models.App,
+							attributes: ['AppName', 'AppId']
+						}
+					]
+				},
+				{
+					model:self.sequelize.models.FamilyMember,
+					attributes: ['FamilyMemberId'],
+					include: [
+						{
+							model: self.sequelize.models.Family,
+							attributes: ['FamilyId', 'FamilyName']
+						}
+					]
+				}
+			]
+		}))
+
+		if (err) throw (err);
+		if (care === null) return false
+		if (care.length === 0) return false
+		return care
+	}
+
+	async appisInstalledforFamily(family, RoleId){
+		let self = this,
+		[err,care] = []
+		;[err, care] = await to(self.sequelize.models.App.find({
+			include: [
+				{
+					model:self.sequelize.models.Role,
+					where: {RoleId},
+					// attributes: ['RoleId', 'Role'],
+					// include: [
+					// 	{
+					// 		model: self.sequelize.models.App,
+					// 		attributes: ['AppName', 'AppId']
+					// 	}
+					// ]
+				},
+				{
+					model:self.sequelize.models.InstalledApp,
+					where: {
+						FamilyFamilyId: family
+					}
+				}
+			]
+		}))
+
+		if (err) throw (err);
+		if (care === null) return false
+		if (care.length === 0) return false
+		return care
+	}
+
+	
+	async deleteRoleforMember(member, role) {
+		let self = this;
+		let [err, care] = await to(self.sequelize.models.MemberRole.destroy({where:{
+			"FamilyMemberFamilyMemberId": member,
+			"RoleRoleId": role
+		}}))
+
+		if (err) throw (err)
+		return care
+	}
+
+	
 	async createRoleforMember(member, role) {
 		let self = this;
 		let [err, care] = await to(self.sequelize.models.MemberRole.create({
@@ -1375,6 +1528,8 @@ class Family extends abstractFamily {
 		if (err) throw (err)
 		return care.dataValues
 	}
+
+
 	async createRolesforMember(member, roles) {
 		let self = this;
 		// try{
@@ -2790,6 +2945,7 @@ module.exports = (sequelize) => {
 	module.Family = new Family(sequelize)
 	module.Profile = new Profile(sequelize)
 	module.apps = new appsConfig(sequelize);
+	module.Apps = new appsConfig(sequelize);
 	module.EmailProfile = new EmailProfile(sequelize);
 	module.TelephoneProfile = new TelephoneProfile(sequelize);
 	module.GitProfile = new GitProfile(sequelize);

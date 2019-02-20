@@ -139,10 +139,10 @@ class appsConfig
 
 	async update(data, where) {
 		let self = this
-		let [err, care] = await to(self.sequelize.models.App.update(data, {where: where}))
+		let [err, care] = await to(self.sequelize.models.App.update(data, {where: where, individualHooks: true}))
 		if(err) throw (err)
 		if(care === null) return {}
-		return care.dataValues
+		return care
 	}
 
 	async delete(where) {
@@ -339,15 +339,130 @@ class appsConfig
 		if (err) throw (err)
 		return true;
         
-    }
+	}
+	
+	async getAllAppsv1(where, whereInner) {
+		let self = this;
+		let appIds = []
+		if(!where) where = true
+		let [err, care] = await to(self.sequelize.models.App.findAll(
+			{
+			attributes:["AppId", "AppName", "AutoInstall", "Enabled", "FamilyFamilyId"],
+			where:where,
+			include: [
+				{
+					model:self.sequelize.models.Role,
+					attributes:["RoleId", "Role", "canUninstall"],
+					// include : [
+					// 	{
+					// 		model: self.sequelize.models.MemberRole
+					// 	}
+					// ]
+				},
+				{
+					model:self.sequelize.models.InstalledApp,
+					attributes:["InstalledAppId","FamilyFamilyId"],
+					where: whereInner
+					
+				}
+			]
+			}
+		));
+		if(err) throw err;
+		return care
+	}
 
+	async installforFamily(appid, FamilyId) {
+		//
+		// console.log(`${FamilyId}::${appid}`)
+		let [err, care] = [],
+		self = this
+		// try{
+		
+		;[err, care] = await to(self.sequelize.models.InstalledApp.findOne({where:{
+			AppAppId:appid,
+			FamilyFamilyId:FamilyId
+			}
+		}))
+		if(err) throw err
+		if(care === null) {
+			;[err, care] = await to(self.sequelize.models.InstalledApp.create({
+				AppAppId:appid,
+				FamilyFamilyId:parseInt(FamilyId)
+			}))
+			if(err) throw err
+			return care
+		}
+		return false
+	}
+
+	
+	async deletefromFamily(appid, FamilyId) {
+		let [err, care] = [],
+		self = this
+		
+		;[err, care] = await to(self.sequelize.models.InstalledApp.destroy({where:
+			{AppAppId:appid,
+			FamilyFamilyId:parseInt(FamilyId)
+		}}))
+		if(err) throw err
+
+		let [err1, care1] = await to(self.sequelize.models.Role.findAll({
+			where:
+			{
+				AppAppId:appid
+			},
+			include: [
+				{
+					model: self.sequelize.models.MemberRole
+				}
+			]
+		}))
+		let memberRoles = []
+		care1 = JSON.parse(JSON.stringify(care1))
+		try{
+			for(let i in care1){
+				for(let j in care1[i].MemberRoles)
+					memberRoles.push(care1[i].MemberRoles[j].MemberRoleId)
+			}
+		}catch(error){}
+		;[err1, care1] = await to(self.sequelize.models.FamilyMember.findAll({
+			where:
+			{
+				FamilyFamilyId:FamilyId
+			}
+		}))
+		let familyMembers = []
+		try{
+			for(let i in care1){
+				familyMembers.push(care1[i].FamilyMemberId)
+			}
+		}catch(error){}
+
+		let deleteSingleMemberRole = async (role, familyMember) => {
+			await to(self.sequelize.models.MemberRole.destroy({where:{FamilyMemberFamilyMemberId:familyMember, RoleRoleId: role}}))
+		}
+
+		let deleteMemberRole = async (role, familyMembers)=> {
+			
+			let promises = familyMembers.map(function (familyMember) {
+				return deleteSingleMemberRole(role, familyMember)
+			});
+			;[err1, care1] = await to(Promise.all(promises));
+		}
+
+		let promises = memberRoles.map(function (role) {
+			return deleteMemberRole(role, familyMembers)
+		});
+		;[err1, care1] = await to(Promise.all(promises));
+
+		return care;			
+	}
 
     async getAllApps (everything, where, where1={}) {
 		let self = this;
 		let appIds = []
 		if(!where) where = true
-		// console.log('=====================')
-		// console.log(where)
 		let [err, care] = await to(self.sequelize.models.App.findAll(
 			{
 			attributes:["AppId", "AppName", "AutoInstall", "Enabled", "FamilyFamilyId"],
